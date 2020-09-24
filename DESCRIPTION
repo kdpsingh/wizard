@@ -1,0 +1,24 @@
+Package: wizard2
+Type: Package
+Title: Windowed Summarization for Autoregressive Data
+Version: 0.0.0:9000
+Author: Karandeep Singh
+Maintainer: Karandeep Singh <kdpsingh@umich.edu>
+Description: This package uses windowed summarization to convert time series data 
+    into a form that can be modeled by prediction models.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    data.table,
+    magrittr,
+    dplyr,
+    assertthat,
+    tidyr,
+    rlang,
+    lubridate,
+    stringr,
+    janitor
+Depends: 
+    R (>= 2.10)
+RoxygenNote: 7.1.0

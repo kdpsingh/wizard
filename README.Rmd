@@ -1,0 +1,71 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# wizard2
+
+## Windowed Summarization for Autoregressive Data
+
+This package uses windowed summarization to convert time series data into a form that can be modeled by prediction models.
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+## Installation
+
+You can install the GitHub version of wizard2 with:
+
+``` r
+remotes::install_github('ML4LHS/wizard2')
+```
+
+## Example
+
+This is a basic example which shows you how to solve a common problem:
+
+```{r}
+library(wizard2)
+
+wf = wiz_frame(fixed_data = sample_fixed_data,
+               temporal_data = sample_temporal_data %>% dplyr::filter(id %in% 1:5),
+               fixed_id = 'id',
+               fixed_start = 'admit_time',
+               temporal_id = 'id',
+               temporal_time = 'time',
+               temporal_variable = 'variable',
+               temporal_value = 'value',
+               step = lubridate::hours(6),
+               output_folder = 'Z:/kdpsingh/wizard_test_output')
+
+wiz_pred = wf %>% 
+  wiz_add_predictors(variable = 'cr',
+                     lookback = lubridate::hours(12), 
+                     window = lubridate::hours(6), 
+                     stats = c(mean = mean,
+                               min = min,
+                               max = max,
+                               median = median,
+                               length = length),
+                     output_file = FALSE)
+
+wiz_outcome = wf %>% 
+  wiz_add_outcomes(variable = 'cr',
+                   lookahead = lubridate::hours(24), 
+                   stats = c(max = max),
+                   output_file = FALSE)
+
+model_data = wiz_combine(wf, wiz_pred, wiz_outcome)
+
+dplyr::glimpse(model_data)
+```
