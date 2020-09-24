@@ -10,7 +10,9 @@ wiz_add_predictors(
   category = NULL,
   lookback = hours(48),
   window = hours(12),
-  stats = c(mean = mean, min = min, max = max)
+  stats = c(mean = mean, min = min, max = max),
+  impute = TRUE,
+  output_file = TRUE
 )
 }
 \description{

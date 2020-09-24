@@ -12,7 +12,9 @@ wiz_categorical_to_numeric(wiz_frame = NULL, encoding = "one_hot")
 where the first level (alphabetically) becomes the reference class, and
 \code{"ref_for_binary"}, which reference-encodes categorical variables with
 2 levels and one-hot-encodes categorical variables with 3+ levels. Defaults
-to \code{"ref_for_binary"}.}
+to \code{"ref_for_binary"}.
+
+Internal function right now because only supports one_hot encoding}
 }
 \description{
 Function that converts categorical temporal predictors into dummy variables

@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# wizard2
+# wizard
 
 ## Windowed Summarization for Autoregressive Data
 
@@ -24,10 +24,10 @@ This package uses windowed summarization to convert time series data into a form
 
 ## Installation
 
-You can install the GitHub version of wizard2 with:
+You can install the GitHub version of wizard with:
 
 ``` r
-remotes::install_github('ML4LHS/wizard2')
+remotes::install_github('ML4LHS/wizard')
 ```
 
 ## Example
@@ -35,7 +35,7 @@ remotes::install_github('ML4LHS/wizard2')
 This is a basic example which shows you how to solve a common problem:
 
 ```{r}
-library(wizard2)
+library(wizard)
 
 wf = wiz_frame(fixed_data = sample_fixed_data,
                temporal_data = sample_temporal_data %>% dplyr::filter(id %in% 1:5),
