@@ -3,6 +3,7 @@
 export("%>%")
 export(wiz_add_outcomes)
 export(wiz_add_predictors)
+export(wiz_add_predictors_old)
 export(wiz_combine)
 export(wiz_frame)
 importFrom(magrittr,"%>%")

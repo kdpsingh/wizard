@@ -9,7 +9,7 @@ wiz_frame = function(fixed_data,
                      temporal_time = 'time',
                      temporal_variable = 'variable',
                      temporal_value = 'value',
-                     temporal_category = 'category',
+                     temporal_category = 'variable',
                      step = NULL,
                      output_folder = NULL) {
 

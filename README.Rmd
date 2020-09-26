@@ -26,29 +26,112 @@ This package uses windowed summarization to convert time series data into a form
 
 You can install the GitHub version of wizard with:
 
-``` r
+```{r}
 remotes::install_github('ML4LHS/wizard')
 ```
 
-## Example
+## How to set up a wiz_frame()
 
-This is a basic example which shows you how to solve a common problem:
+Start by loading and package and defining your `wiz_frame()`. A `wiz_frame` is simply a list with the class `wiz_frame` and contains all the key information needed to describe both your fixed dataset (such as demographics, one row per patient) and your temporal dataset (one row per observation linked to a timestamp).
 
 ```{r}
 library(wizard)
+library(magrittr)
+library(lubridate)
+
+unlink(file.path(tempdir(), 'wiz_frame_dir', '*.*'))
 
 wf = wiz_frame(fixed_data = sample_fixed_data,
-               temporal_data = sample_temporal_data %>% dplyr::filter(id %in% 1:5),
+               temporal_data = sample_temporal_data %>% dplyr::filter(id %in% 1:2),
                fixed_id = 'id',
                fixed_start = 'admit_time',
                temporal_id = 'id',
                temporal_time = 'time',
                temporal_variable = 'variable',
+               temporal_category = 'category',
                temporal_value = 'value',
                step = lubridate::hours(6),
-               output_folder = 'Z:/kdpsingh/wizard_test_output')
+               output_folder = file.path(tempdir(), 'wiz_frame_dir'))
+```
 
-wiz_pred = wf %>% 
+## Let's look at the automatically generated data dictionaries
+
+```{r}
+wf$fixed_data_dict
+
+wf$temporal_data_dict
+```
+
+## Let's add some predictors and outcomes
+
+The default method writes output to the folder defined in your `wiz_frame`. When you write your output to file, you are allowed to chain together `add_predictors()` and `add_outcomes()` functions. This is possble because these functions invisibly return a `wiz_frame`.
+
+If, however, you set `output_file` to `FALSE`, then your actual output is returned (rather than the `wiz_frame`) so you cannot chain functions.
+
+```{r}
+wf %>% 
+  wiz_add_predictors(variable = 'cr', # Note: You can supply a vector of variables
+                     lookback = hours(12), 
+                     window = hours(6), 
+                     stats = c(mean = mean,
+                               min = min,
+                               max = max,
+                               median = median,
+                               length = length)) %>% 
+  wiz_add_predictors(category = 'flag', # Note: category is always a regular expression 
+                     lookback = days(7),
+                     stats = c(sum = sum,
+                               any = any)) %>% 
+  wiz_add_outcomes(variable = 'cr',
+                   lookahead = hours(24), 
+                   stats = c(max = max))
+```
+
+## Let's combine our output into a single data frame
+
+You can either provide `wiz_combine()` with a set of data frames or files separated by commas. Or, now you can provide a vector of file names using the `files` argument.
+
+This resulting frame is essentially ready for modeling (using `tidymodels`, for example). Make sure to keep individual patients in the same fold if you divide this dataset into multiple folds.
+
+```{r}
+model_data = wiz_combine(wf, files = dir(file.path(tempdir(), 'wiz_frame_dir')))
+
+model_data
+```
+
+
+## Testing wiz_frame without writing to output files
+
+If you want to simply test `wiz_frame`, you may prefer not to write your output to file. You can accomplish this by setting `output_file` to `FALSE`.
+
+```{r}
+wf %>% 
+  wiz_add_predictors(variable = 'cr',
+                     lookback = lubridate::hours(12), 
+                     window = lubridate::hours(6), 
+                     stats = c(mean = mean,
+                               min = min,
+                               max = max,
+                               median = median,
+                               length = length),
+                     output_file = FALSE)
+```
+
+## You can supply a vector of variables
+
+```{r}
+wf %>% 
+  wiz_add_predictors(variable = c('cr', 'cr_high_no'),
+                     lookback = lubridate::weeks(1), 
+                     stats = c(any = any),
+                     output_file = FALSE)
+```
+
+
+## Let's benchmark the new add_predictors() function versus the old one
+
+```{r}
+new = wf %>% 
   wiz_add_predictors(variable = 'cr',
                      lookback = lubridate::hours(12), 
                      window = lubridate::hours(6), 
@@ -59,13 +142,53 @@ wiz_pred = wf %>%
                                length = length),
                      output_file = FALSE)
 
-wiz_outcome = wf %>% 
-  wiz_add_outcomes(variable = 'cr',
-                   lookahead = lubridate::hours(24), 
-                   stats = c(max = max),
-                   output_file = FALSE)
+old = wf %>% 
+  wiz_add_predictors_old(variable = 'cr',
+                     lookback = lubridate::hours(12), 
+                     window = lubridate::hours(6), 
+                     stats = c(mean = mean,
+                               min = min,
+                               max = max,
+                               median = median,
+                               length = length),
+                     output_file = FALSE)
 
-model_data = wiz_combine(wf, wiz_pred, wiz_outcome)
-
-dplyr::glimpse(model_data)
+identical(new, old)
 ```
+There are slight differences in the output. If no values are available early in the patient's course, then all stats (including length) will now be have missing values. 
+
+```{r}
+new
+
+old
+```
+
+But the benchmarking shows that this tradeoff is worth it! This benchmark is even more impressive when processing multiple variables.
+
+```{r}
+microbenchmark::microbenchmark(
+  wf %>% 
+    wiz_add_predictors(variable = 'cr',
+                       lookback = lubridate::hours(12), 
+                       window = lubridate::hours(6), 
+                       stats = c(mean = mean,
+                                 min = min,
+                                 max = max,
+                                 median = median,
+                                 length = length),
+                       output_file = FALSE),
+  wf %>% 
+    wiz_add_predictors_old(variable = 'cr',
+                           lookback = lubridate::hours(12), 
+                           window = lubridate::hours(6), 
+                           stats = c(mean = mean,
+                                     min = min,
+                                     max = max,
+                                     median = median,
+                                     length = length),
+                           output_file = FALSE),
+  times = 1
+) %>% 
+  dplyr::mutate(expr = c('new', 'old'))
+```
+

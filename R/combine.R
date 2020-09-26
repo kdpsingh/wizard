@@ -1,9 +1,16 @@
 #'
 #' @export
-wiz_combine = function(wiz_frame, ..., wiz_path = TRUE, dplyr_join = dplyr::inner_join) {
-  temporal_dfs = append(list(wiz_frame$fixed_data %>%
-                          dplyr::rename(!!rlang::parse_expr(wiz_frame$temporal_id) := !!rlang::parse_expr(wiz_frame$fixed_id))),
-                        list(...))
+wiz_combine = function(wiz_frame, ..., files = NULL, wiz_path = TRUE, dplyr_join = dplyr::inner_join) {
+
+  if (is.null(files)) {
+    temporal_dfs = append(list(wiz_frame$fixed_data %>%
+                                 dplyr::rename(!!rlang::parse_expr(wiz_frame$temporal_id) := !!rlang::parse_expr(wiz_frame$fixed_id))),
+                          list(...))
+  } else {
+    temporal_dfs = append(list(wiz_frame$fixed_data %>%
+                                 dplyr::rename(!!rlang::parse_expr(wiz_frame$temporal_id) := !!rlang::parse_expr(wiz_frame$fixed_id))),
+                          as.list(files))
+  }
   temporal_dfs =
     temporal_dfs %>%
     lapply(function (x) {
@@ -18,5 +25,5 @@ wiz_combine = function(wiz_frame, ..., wiz_path = TRUE, dplyr_join = dplyr::inne
       }
     })
 
-  Reduce(dplyr_join, temporal_dfs) %>% as.data.frame()
+  return(Reduce(dplyr_join, temporal_dfs) %>% as.data.frame())
 }
