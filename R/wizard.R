@@ -9,9 +9,10 @@ wiz_frame = function(fixed_data,
                      temporal_time = 'time',
                      temporal_variable = 'variable',
                      temporal_value = 'value',
-                     temporal_category = 'variable',
+                     temporal_category = temporal_variable,
                      step = NULL,
-                     output_folder = NULL) {
+                     output_folder = NULL,
+                     numeric_threshold = 0.5) {
 
   assertthat::assert_that('data.frame' %in% class(fixed_data))
   assertthat::assert_that('data.frame' %in% class(temporal_data))
@@ -73,7 +74,8 @@ wiz_frame = function(fixed_data,
     temporal_data_dict =
       wiz_build_temporal_data_dictionary(temporal_data,
                                          temporal_variable,
-                                         temporal_value)
+                                         temporal_value,
+                                         numeric_threshold)
   })
 
   # Change step to numeric and set step_units
@@ -141,11 +143,11 @@ wiz_frame = function(fixed_data,
       temporal_data_dict = temporal_data_dict),
       class = 'wiz_frame')
 
-  suppressWarnings({
-    wiz_frame =
-      wiz_frame %>%
-      wiz_categorical_to_numeric()
-  })
+  # suppressWarnings({
+  #   wiz_frame =
+  #    wiz_frame %>%
+  #    wiz_categorical_to_numeric()
+  #})
 
   return(wiz_frame)
 }
@@ -158,7 +160,8 @@ wiz_frame = function(fixed_data,
 #'
 wiz_build_temporal_data_dictionary = function (temporal_data,
                                                temporal_variable,
-                                               temporal_value) {
+                                               temporal_value,
+                                               numeric_threshold = 0.5) {
   temporal_data_dict =
     temporal_data %>%
     dplyr::select(dplyr::all_of(temporal_variable)) %>%
@@ -195,7 +198,7 @@ wiz_build_temporal_data_dictionary = function (temporal_data,
         temporal_data_values_numeric %>% na.omit() %>% length()
 
       # Consider a number to be numeric if >= 50% of non-missing values are numeric
-      if (temporal_data_values_numeric_not_missing >= 0.5 * temporal_data_values_not_missing) {
+      if (temporal_data_values_numeric_not_missing >= numeric_threshold * temporal_data_values_not_missing) {
         temporal_data_class = 'numeric'
       } else {
         temporal_data_class = 'character'
@@ -224,11 +227,12 @@ wiz_build_temporal_data_dictionary = function (temporal_data,
 #' where the first level (alphabetically) becomes the reference class, and
 #' \code{"ref_for_binary"}, which reference-encodes categorical variables with
 #' 2 levels and one-hot-encodes categorical variables with 3+ levels. Defaults
-#' to \code{"ref_for_binary"}.
+#' to \code{"one_hot"}.
 #'
 #' Internal function right now because only supports one_hot encoding
 wiz_categorical_to_numeric = function(wiz_frame = NULL,
-                                      encoding = 'one_hot') {
+                                      encoding = 'one_hot',
+                                      numeric_threshold = 0.5) {
 
   categorical_vars = wiz_frame$temporal_data_dict %>%
     dplyr::filter(class == 'character') %>%
@@ -249,9 +253,11 @@ wiz_categorical_to_numeric = function(wiz_frame = NULL,
     dplyr::mutate_at(dplyr::vars(!!rlang::parse_expr(wiz_frame$temporal_value)), as.numeric) %>%
     dplyr::select(-wiz_temp_var)
 
-  wiz_frame$temporal_data_dict = wiz_build_temporal_data_dictionary(wiz_frame$temporal_data,
-                                                          wiz_frame$temporal_variable,
-                                                          wiz_frame$temporal_value)
+  suppressWarnings({wiz_frame$temporal_data_dict =
+    wiz_build_temporal_data_dictionary(wiz_frame$temporal_data,
+                                       wiz_frame$temporal_variable,
+                                       wiz_frame$temporal_value,
+                                       numeric_threshold)})
   wiz_frame
 }
 

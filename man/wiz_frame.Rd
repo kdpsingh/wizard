@@ -14,7 +14,7 @@ wiz_frame(
   temporal_time = "time",
   temporal_variable = "variable",
   temporal_value = "value",
-  temporal_category = "variable",
+  temporal_category = temporal_variable,
   step = NULL,
   output_folder = NULL
 )

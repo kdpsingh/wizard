@@ -26,7 +26,7 @@ This package uses windowed summarization to convert time series data into a form
 
 You can install the GitHub version of wizard with:
 
-```{r}
+```{r eval=FALSE}
 remotes::install_github('ML4LHS/wizard')
 ```
 
@@ -34,10 +34,15 @@ remotes::install_github('ML4LHS/wizard')
 
 Start by loading and package and defining your `wiz_frame()`. A `wiz_frame` is simply a list with the class `wiz_frame` and contains all the key information needed to describe both your fixed dataset (such as demographics, one row per patient) and your temporal dataset (one row per observation linked to a timestamp).
 
-```{r}
+```{r eval=FALSE}
 library(wizard)
+```
+
+```{r}
 library(magrittr)
 library(lubridate)
+
+future::plan('multiprocess')
 
 unlink(file.path(tempdir(), 'wiz_frame_dir', '*.*'))
 
@@ -50,11 +55,34 @@ wf = wiz_frame(fixed_data = sample_fixed_data,
                temporal_variable = 'variable',
                temporal_category = 'category',
                temporal_value = 'value',
-               step = lubridate::hours(6),
+               step = hours(6),
                output_folder = file.path(tempdir(), 'wiz_frame_dir'))
 ```
 
 ## Let's look at the automatically generated data dictionaries
+
+```{r}
+names(wf)
+
+wf$step
+
+wf$step_units
+
+wf$fixed_data_dict
+
+wf$temporal_data_dict
+```
+
+## Let's dummy-code the temporal categorical variables
+
+
+```{r}
+wf = wf %>% 
+  wiz_categorical_to_numeric()
+```
+
+
+This affects only the temporal data and not the fixed data.
 
 ```{r}
 wf$fixed_data_dict
@@ -69,7 +97,7 @@ The default method writes output to the folder defined in your `wiz_frame`. When
 If, however, you set `output_file` to `FALSE`, then your actual output is returned (rather than the `wiz_frame`) so you cannot chain functions.
 
 ```{r}
-wf %>% 
+wf %>%           
   wiz_add_predictors(variable = 'cr', # Note: You can supply a vector of variables
                      lookback = hours(12), 
                      window = hours(6), 
@@ -96,11 +124,11 @@ This resulting frame is essentially ready for modeling (using `tidymodels`, for 
 ```{r}
 model_data = wiz_combine(wf, files = dir(file.path(tempdir(), 'wiz_frame_dir')))
 
-model_data
+dplyr::glimpse(model_data)
 ```
 
 
-## Testing wiz_frame without writing to output files
+## Testing wiz_frame without writing output to files
 
 If you want to simply test `wiz_frame`, you may prefer not to write your output to file. You can accomplish this by setting `output_file` to `FALSE`.
 
@@ -114,7 +142,8 @@ wf %>%
                                max = max,
                                median = median,
                                length = length),
-                     output_file = FALSE)
+                     output_file = FALSE) %>% 
+  dplyr::glimpse()
 ```
 
 ## You can supply a vector of variables
@@ -124,49 +153,21 @@ wf %>%
   wiz_add_predictors(variable = c('cr', 'cr_high_no'),
                      lookback = lubridate::weeks(1), 
                      stats = c(any = any),
-                     output_file = FALSE)
+                     output_file = FALSE) %>% 
+  dplyr::glimpse()
 ```
 
+## Let's benchmark the performance on our package
 
-## Let's benchmark the new add_predictors() function versus the old one
-
-```{r}
-new = wf %>% 
-  wiz_add_predictors(variable = 'cr',
-                     lookback = lubridate::hours(12), 
-                     window = lubridate::hours(6), 
-                     stats = c(mean = mean,
-                               min = min,
-                               max = max,
-                               median = median,
-                               length = length),
-                     output_file = FALSE)
-
-old = wf %>% 
-  wiz_add_predictors_old(variable = 'cr',
-                     lookback = lubridate::hours(12), 
-                     window = lubridate::hours(6), 
-                     stats = c(mean = mean,
-                               min = min,
-                               max = max,
-                               median = median,
-                               length = length),
-                     output_file = FALSE)
-
-identical(new, old)
-```
-There are slight differences in the output. If no values are available early in the patient's course, then all stats (including length) will now be have missing values. 
+### Running in serial
 
 ```{r}
-new
+benchmark_results = list()
 
-old
-```
+future::plan('sequential')
 
-But the benchmarking shows that this tradeoff is worth it! This benchmark is even more impressive when processing multiple variables.
-
-```{r}
-microbenchmark::microbenchmark(
+benchmark_results[['sequential']] = 
+  microbenchmark::microbenchmark(
   wf %>% 
     wiz_add_predictors(variable = 'cr',
                        lookback = lubridate::hours(12), 
@@ -177,18 +178,73 @@ microbenchmark::microbenchmark(
                                  median = median,
                                  length = length),
                        output_file = FALSE),
-  wf %>% 
-    wiz_add_predictors_old(variable = 'cr',
-                           lookback = lubridate::hours(12), 
-                           window = lubridate::hours(6), 
-                           stats = c(mean = mean,
-                                     min = min,
-                                     max = max,
-                                     median = median,
-                                     length = length),
-                           output_file = FALSE),
-  times = 1
-) %>% 
-  dplyr::mutate(expr = c('new', 'old'))
+  times = 10
+  )
+
+```
+
+### Running in parallel
+
+```{r}
+future::plan('multiprocess')
+
+benchmark_results[['multiprocess']] = 
+  microbenchmark::microbenchmark(
+    wf %>% 
+      wiz_add_predictors(variable = 'cr',
+                         lookback = lubridate::hours(12), 
+                         window = lubridate::hours(6), 
+                         stats = c(mean = mean,
+                                   min = min,
+                                   max = max,
+                                   median = median,
+                                   length = length),
+                         output_file = FALSE),
+    times = 10
+  )
+```
+
+### Implementation in the prior version (using `dplyr::group_modify()`)
+
+```{r}
+benchmark_results[['group_modify']] =
+  microbenchmark::microbenchmark(
+    wf %>% 
+      wiz_add_predictors_group_modify(variable = 'cr',
+                                      lookback = lubridate::hours(12), 
+                                      window = lubridate::hours(6), 
+                                      stats = c(mean = mean,
+                                                min = min,
+                                                max = max,
+                                                median = median,
+                                                length = length),
+                                      output_file = FALSE),
+    times = 10
+  )
+```
+
+### Original implementation (using a `for` loop)
+
+```{r}
+benchmark_results[['original']] =
+  microbenchmark::microbenchmark(
+    wf %>% 
+      wiz_add_predictors_for_loop(variable = 'cr',
+                                  lookback = lubridate::hours(12), 
+                                  window = lubridate::hours(6), 
+                                  stats = c(mean = mean,
+                                            min = min,
+                                            max = max,
+                                            median = median,
+                                            length = length),
+                                  output_file = FALSE),
+    times = 10
+  )
+```
+
+## Benchmark results
+
+```{r}
+benchmark_results
 ```
 
