@@ -104,7 +104,7 @@ wiz_frame = function(fixed_data,
         temporal_data =
           temporal_data %>%
           dplyr::left_join(., fixed_data %>%
-                             dplyr::select(dplyr::all_of(c(fixed_id, fixed_start))) %>%
+                             dplyr::select_at(c(fixed_id, fixed_start)) %>%
                              dplyr::rename(!!rlang::parse_expr(temporal_id) := !!rlang::parse_expr(fixed_id)) %>%
                              dplyr::rename(wiz_fixed_start_time = !!rlang::parse_expr(fixed_start))
           ) %>%
@@ -164,7 +164,7 @@ wiz_build_temporal_data_dictionary = function (temporal_data,
                                                numeric_threshold = 0.5) {
   temporal_data_dict =
     temporal_data %>%
-    dplyr::select(dplyr::all_of(temporal_variable)) %>%
+    dplyr::select_at(temporal_variable) %>%
     dplyr::pull(1) %>%
     unique() %>%
     dplyr::tibble(variable = .) %>%
@@ -237,6 +237,10 @@ wiz_categorical_to_numeric = function(wiz_frame = NULL,
   categorical_vars = wiz_frame$temporal_data_dict %>%
     dplyr::filter(class == 'character') %>%
     dplyr::pull(variable)
+
+  if (length(categorical_vars) == 0) {
+    stop('There are no categorical variables. There is no need to apply wiz_categorical_to_numeric().')
+  }
 
   wiz_frame$temporal_data = wiz_frame$temporal_data %>%
     dplyr::mutate(wiz_temp_var = (!!rlang::parse_expr(wiz_frame$temporal_variable)) %in% categorical_vars) %>%

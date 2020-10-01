@@ -47,9 +47,10 @@ future::plan('multiprocess')
 unlink(file.path(tempdir(), 'wiz_frame_dir', '*.*'))
 
 wf = wiz_frame(fixed_data = sample_fixed_data,
-               temporal_data = sample_temporal_data %>% dplyr::filter(id %in% 1:2),
+               temporal_data = sample_temporal_data %>% dplyr::filter(id %in% 1:10),
                fixed_id = 'id',
                fixed_start = 'admit_time',
+               fixed_end = 'dc_time',
                temporal_id = 'id',
                temporal_time = 'time',
                temporal_variable = 'variable',
@@ -106,10 +107,11 @@ wf %>%
                                max = max,
                                median = median,
                                length = length)) %>% 
-  wiz_add_predictors(category = 'flag', # Note: category is always a regular expression 
+  wiz_add_predictors(category = 'med', # Note: category is always a regular expression 
                      lookback = days(7),
                      stats = c(sum = sum,
-                               any = any)) %>% 
+                               any = any),
+                     impute = FALSE) %>% # Note: do *not* perform carry-forward imputation 
   wiz_add_outcomes(variable = 'cr',
                    lookahead = hours(24), 
                    stats = c(max = max))
@@ -159,33 +161,11 @@ wf %>%
 
 ## Let's benchmark the performance on our package
 
-### Running in serial
-
-```{r}
-benchmark_results = list()
-
-future::plan('sequential')
-
-benchmark_results[['sequential']] = 
-  microbenchmark::microbenchmark(
-  wf %>% 
-    wiz_add_predictors(variable = 'cr',
-                       lookback = lubridate::hours(12), 
-                       window = lubridate::hours(6), 
-                       stats = c(mean = mean,
-                                 min = min,
-                                 max = max,
-                                 median = median,
-                                 length = length),
-                       output_file = FALSE),
-  times = 10
-  )
-
-```
-
 ### Running in parallel
 
-```{r}
+```{r message=FALSE}
+benchmark_results = list()
+
 future::plan('multiprocess')
 
 benchmark_results[['multiprocess']] = 
@@ -200,13 +180,37 @@ benchmark_results[['multiprocess']] =
                                    median = median,
                                    length = length),
                          output_file = FALSE),
-    times = 10
+    times = 1
   )
 ```
 
+### Running in serial
+
+```{r message=FALSE}
+future::plan('sequential')
+
+benchmark_results[['sequential']] = 
+  microbenchmark::microbenchmark(
+  wf %>% 
+    wiz_add_predictors(variable = 'cr',
+                       lookback = lubridate::hours(12), 
+                       window = lubridate::hours(6), 
+                       stats = c(mean = mean,
+                                 min = min,
+                                 max = max,
+                                 median = median,
+                                 length = length),
+                       output_file = FALSE),
+  times = 1
+  )
+
+```
+
+
+
 ### Implementation in the prior version (using `dplyr::group_modify()`)
 
-```{r}
+```{r message=FALSE}
 benchmark_results[['group_modify']] =
   microbenchmark::microbenchmark(
     wf %>% 
@@ -219,26 +223,7 @@ benchmark_results[['group_modify']] =
                                                 median = median,
                                                 length = length),
                                       output_file = FALSE),
-    times = 10
-  )
-```
-
-### Original implementation (using a `for` loop)
-
-```{r}
-benchmark_results[['original']] =
-  microbenchmark::microbenchmark(
-    wf %>% 
-      wiz_add_predictors_for_loop(variable = 'cr',
-                                  lookback = lubridate::hours(12), 
-                                  window = lubridate::hours(6), 
-                                  stats = c(mean = mean,
-                                            min = min,
-                                            max = max,
-                                            median = median,
-                                            length = length),
-                                  output_file = FALSE),
-    times = 10
+    times = 1
   )
 ```
 
