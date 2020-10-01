@@ -16,7 +16,8 @@ wiz_frame(
   temporal_value = "value",
   temporal_category = temporal_variable,
   step = NULL,
-  output_folder = NULL
+  output_folder = NULL,
+  numeric_threshold = 0.5
 )
 }
 \description{

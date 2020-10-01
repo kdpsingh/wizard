@@ -4,7 +4,11 @@
 \alias{wiz_categorical_to_numeric}
 \title{Function that converts categorical temporal predictors into dummy variables}
 \usage{
-wiz_categorical_to_numeric(wiz_frame = NULL, encoding = "one_hot")
+wiz_categorical_to_numeric(
+  wiz_frame = NULL,
+  encoding = "one_hot",
+  numeric_threshold = 0.5
+)
 }
 \arguments{
 \item{encoding}{How to encode categorical variables. Options include
@@ -12,7 +16,7 @@ wiz_categorical_to_numeric(wiz_frame = NULL, encoding = "one_hot")
 where the first level (alphabetically) becomes the reference class, and
 \code{"ref_for_binary"}, which reference-encodes categorical variables with
 2 levels and one-hot-encodes categorical variables with 3+ levels. Defaults
-to \code{"ref_for_binary"}.
+to \code{"one_hot"}.
 
 Internal function right now because only supports one_hot encoding}
 }

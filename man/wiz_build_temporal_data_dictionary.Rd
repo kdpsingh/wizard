@@ -9,7 +9,8 @@ some variables are categorical. This is an internal function.}
 wiz_build_temporal_data_dictionary(
   temporal_data,
   temporal_variable,
-  temporal_value
+  temporal_value,
+  numeric_threshold = 0.5
 )
 }
 \description{
