@@ -508,7 +508,8 @@ wiz_add_predictors = function(wiz_frame = NULL,
         output_item =
           output_item %>%
           # dplyr::filter(!!rlang::parse_expr(temporal_variable) == groups[[temporal_variable]]) %>%
-          dplyr::group_by(!!rlang::parse_expr(temporal_variable))%>%
+          dplyr::group_by(!!rlang::parse_expr(temporal_variable)) %>%
+          dplyr::arrange(!!rlang::parse_expr(temporal_variable), wiz_step_time) %>%
           dplyr::summarize_at(temporal_value,
             .funs = stats) %>%
           tidyr::gather(wiz_stat, wiz_value, -!!rlang::parse_expr(temporal_variable)) %>%
@@ -564,32 +565,32 @@ wiz_add_predictors = function(wiz_frame = NULL,
 
   output_frame =
     output_frame %>%
-    dplyr::mutate(variable =
+    dplyr::mutate(wiz_variable =
                     paste0(!!rlang::parse_expr(wiz_frame$temporal_variable),
                            '_', wiz_stat),
-                  value = as.numeric(wiz_value)) %>%
-    dplyr::select(-wiz_stat, -wiz_value) %>%
+                  wiz_value = as.numeric(wiz_value)) %>%
+    dplyr::select(-!!rlang::parse_expr(wiz_frame$temporal_variable), -wiz_stat) %>%
     # tidyr::gather(variable, value, -!!rlang::parse_expr(wiz_frame$temporal_id),
     #               -wiz_variable, -time, -window_time) %>%
     # # dplyr::filter(stringr::str_detect(variable,
     # #                                  paste0('^', wiz_variable, '_.*?_.*?_[0-9.]+$'))) %>%
     # dplyr::select(-wiz_variable) %>%
-    dplyr::mutate(value = dplyr::na_if(value, -Inf)) %>%
-    dplyr::mutate(value = dplyr::na_if(value, Inf)) %>%
+    dplyr::mutate(wiz_value = dplyr::na_if(wiz_value, -Inf)) %>%
+    dplyr::mutate(wiz_value = dplyr::na_if(wiz_value, Inf)) %>%
     {.[is.na(.)] = NA_real_; .}
 
 
   if (lookback_converted < 0) { # e.g. if it is a lookahead
     output_frame =
       output_frame %>%
-      dplyr::mutate(variable = paste0('outcome_',variable, '_',
+      dplyr::mutate(wiz_variable = paste0('outcome_', wiz_variable, '_',
                                       stringr::str_pad(abs(window_time),
                                                        nchar(abs(lookback_converted)), pad = '0'))) %>%
       dplyr::select(-window_time)
   } else { # if it is a lookback
     output_frame =
       output_frame %>%
-      dplyr::mutate(variable = paste0(variable, '_',
+      dplyr::mutate(wiz_variable = paste0(wiz_variable, '_',
                                       stringr::str_pad(abs(window_time),
                                                        nchar(abs(lookback_converted)), pad = '0'))) %>%
       dplyr::select(-window_time)
@@ -598,15 +599,15 @@ wiz_add_predictors = function(wiz_frame = NULL,
   if (impute) {
     output_frame =
       output_frame %>%
-      dplyr::group_by(!!rlang::parse_expr(wiz_frame$temporal_id), variable) %>% # Do not group by time because values need to fill across different times
-      dplyr::arrange(!!rlang::parse_expr(wiz_frame$temporal_id), variable, time) %>%
-      tidyr::fill(-!!rlang::parse_expr(wiz_frame$temporal_id), -variable, -time) %>%
+      dplyr::group_by(!!rlang::parse_expr(wiz_frame$temporal_id), wiz_variable) %>% # Do not group by time because values need to fill across different times
+      dplyr::arrange(!!rlang::parse_expr(wiz_frame$temporal_id), wiz_variable, time) %>%
+      tidyr::fill(-!!rlang::parse_expr(wiz_frame$temporal_id), -wiz_variable, -time) %>%
       dplyr::ungroup()
   }
 
   output_frame =
     output_frame %>%
-    tidyr::spread(variable, value)
+    tidyr::spread(wiz_variable, wiz_value)
 
   if (output_file == TRUE) {
     data.table::fwrite(output_frame, output_file_name)
