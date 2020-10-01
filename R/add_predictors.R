@@ -238,11 +238,17 @@ wiz_add_predictors_group_modify = function(wiz_frame = NULL,
 #' New internal helper function
 wiz_define_steps = function(groups, temporal_id, step, max_step_times_per_id,
                             lookback_converted, window_converted) {
-  max_step_time =
+
+
+  # check to make sure no one has missing time in temporal_data
+  # check to make sure all patients in temporal_data
+  # are accounted for in the fixed_data
+  # make sure no missing values in fixed_start or fixed_end
+
+    max_step_time =
     max_step_times_per_id %>%
     dplyr::filter(!!rlang::parse_expr(temporal_id) == groups[[temporal_id]]) %>%
     dplyr::pull(wiz_step_time)
-
 
   if (length(max_step_time) == 0 || max_step_time < 0) { # This should only be the case if someone has no observations in temporal_data after time 0
     return(NULL)
@@ -365,6 +371,9 @@ wiz_add_predictors = function(wiz_frame = NULL,
     stop ('The lookback must be divisible by the window (with no remainder).')
   }
 
+  # Convert value column to numeric
+  wiz_frame$temporal_data[[wiz_frame$temporal_value]] =
+    as.numeric(wiz_frame$temporal_data[[wiz_frame$temporal_value]])
 
   temporal_data_of_interest =
     wiz_frame$temporal_data %>%
@@ -437,6 +446,8 @@ wiz_add_predictors = function(wiz_frame = NULL,
 
   message(paste0('Anticipated number of rows in final output: ', final_output_rows))
 
+  message('Allocating memory...')
+
   output_frame =
     dplyr::tibble(!!rlang::parse_expr(wiz_frame$temporal_id) :=
                     unique(wiz_frame$temporal_data[[wiz_frame$temporal_id]])) %>%
@@ -446,14 +457,16 @@ wiz_add_predictors = function(wiz_frame = NULL,
           unique(temporal_data_of_interest[[wiz_frame$temporal_variable]]))) %>%
     dplyr::group_by(!!rlang::parse_expr(wiz_frame$temporal_id),
                     !!rlang::parse_expr(wiz_frame$temporal_variable)) %>%
-    dplyr::group_modify(~wiz_define_steps(.y,
-                                          wiz_frame$temporal_id,
-                                          wiz_frame$step,
-                                          max_step_times_per_id,
-                                          lookback_converted,
-                                          window_converted))
+    dplyr::group_modify(~wiz_define_steps(groups = .y,
+                                         temporal_id = wiz_frame$temporal_id,
+                                         step = wiz_frame$step,
+                                         max_step_times_per_id = max_step_times_per_id,
+                                         lookback_converted = lookback_converted,
+                                         window_converted = window_converted))
 
   total_num_groups = nrow(output_frame)
+
+  message('Beginning calculation...')
 
   if ('sequential' %in% class(future::plan())) {
     strategy = 'sequential'
@@ -554,7 +567,7 @@ wiz_add_predictors = function(wiz_frame = NULL,
     dplyr::mutate(variable =
                     paste0(!!rlang::parse_expr(wiz_frame$temporal_variable),
                            '_', wiz_stat),
-                  value = wiz_value) %>%
+                  value = as.numeric(wiz_value)) %>%
     dplyr::select(-wiz_stat, -wiz_value) %>%
     # tidyr::gather(variable, value, -!!rlang::parse_expr(wiz_frame$temporal_id),
     #               -wiz_variable, -time, -window_time) %>%

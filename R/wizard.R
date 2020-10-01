@@ -230,6 +230,7 @@ wiz_build_temporal_data_dictionary = function (temporal_data,
 #' to \code{"one_hot"}.
 #'
 #' Internal function right now because only supports one_hot encoding
+#' @export
 wiz_categorical_to_numeric = function(wiz_frame = NULL,
                                       encoding = 'one_hot',
                                       numeric_threshold = 0.5) {
