@@ -20,6 +20,7 @@ knitr::opts_chunk$set(
 This package uses windowed summarization to convert time series data into a form that can be modeled by prediction models.
 
 <!-- badges: start -->
+[![Lifecycle: maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://www.tidyverse.org/lifecycle/#maturing)
 <!-- badges: end -->
 
 ## Installation
@@ -126,7 +127,7 @@ This resulting frame is essentially ready for modeling (using `tidymodels`, for 
 ```{r}
 model_data = wiz_combine(wf, files = dir(file.path(tempdir(), 'wiz_frame_dir')))
 
-dplyr::glimpse(model_data)
+head(model_data)
 ```
 
 
@@ -137,26 +138,37 @@ If you want to simply test `wiz_frame`, you may prefer not to write your output 
 ```{r}
 wf %>% 
   wiz_add_predictors(variable = 'cr',
-                     lookback = lubridate::hours(12), 
-                     window = lubridate::hours(6), 
+                     lookback = hours(12), 
+                     window = hours(6), 
                      stats = c(mean = mean,
                                min = min,
                                max = max,
                                median = median,
                                length = length),
                      output_file = FALSE) %>% 
-  dplyr::glimpse()
+  head()
 ```
 
-## You can supply a vector of variables
+## You can also supply a vector of variables
 
 ```{r}
 wf %>% 
-  wiz_add_predictors(variable = c('cr', 'cr_high_no'),
-                     lookback = lubridate::weeks(1), 
+  wiz_add_predictors(variable = c('cr', 'med_aspirin'),
+                     lookback = weeks(1), 
                      stats = c(any = any),
                      output_file = FALSE) %>% 
-  dplyr::glimpse()
+  head()
+```
+
+## Category accepts regular expressions
+
+```{r}
+wf %>% 
+  wiz_add_predictors(category = 'lab|med',
+                     lookback = hours(12), 
+                     stats = c(any = any),
+                     output_file = FALSE) %>% 
+  head()
 ```
 
 ## Let's benchmark the performance on our package
@@ -172,8 +184,8 @@ benchmark_results[['multiprocess']] =
   microbenchmark::microbenchmark(
     wf %>% 
       wiz_add_predictors(variable = 'cr',
-                         lookback = lubridate::hours(12), 
-                         window = lubridate::hours(6), 
+                         lookback = hours(12), 
+                         window = hours(6), 
                          stats = c(mean = mean,
                                    min = min,
                                    max = max,
@@ -193,8 +205,8 @@ benchmark_results[['sequential']] =
   microbenchmark::microbenchmark(
   wf %>% 
     wiz_add_predictors(variable = 'cr',
-                       lookback = lubridate::hours(12), 
-                       window = lubridate::hours(6), 
+                       lookback = hours(12), 
+                       window = hours(6), 
                        stats = c(mean = mean,
                                  min = min,
                                  max = max,
@@ -204,27 +216,6 @@ benchmark_results[['sequential']] =
   times = 1
   )
 
-```
-
-
-
-### Implementation in the prior version (using `dplyr::group_modify()`)
-
-```{r message=FALSE}
-benchmark_results[['group_modify']] =
-  microbenchmark::microbenchmark(
-    wf %>% 
-      wiz_add_predictors_group_modify(variable = 'cr',
-                                      lookback = lubridate::hours(12), 
-                                      window = lubridate::hours(6), 
-                                      stats = c(mean = mean,
-                                                min = min,
-                                                max = max,
-                                                median = median,
-                                                length = length),
-                                      output_file = FALSE),
-    times = 1
-  )
 ```
 
 ## Benchmark results

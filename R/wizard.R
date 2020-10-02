@@ -59,25 +59,6 @@ wiz_frame = function(fixed_data,
     }
   }
 
-  # Transform factors to characters
-  fixed_data = fixed_data %>% dplyr::mutate_if(is.factor, as.character)
-
-  # Generate a data dictionary for fixed_data
-  fixed_data_dict =
-    lapply(fixed_data, class) %>%
-    lapply(function (x) x[1]) %>% # If multiple classes, take only the first one (happens with date-times)
-    dplyr::as_tibble() %>%
-    tidyr::gather(key = 'variable', value = 'class') %>%
-    as.data.frame()
-
-  suppressWarnings({
-    temporal_data_dict =
-      wiz_build_temporal_data_dictionary(temporal_data,
-                                         temporal_variable,
-                                         temporal_value,
-                                         numeric_threshold)
-  })
-
   # Change step to numeric and set step_units
   step_units = NULL
 
@@ -98,36 +79,91 @@ wiz_frame = function(fixed_data,
       step = step@minute
       step_units = 'minute'
     }
-
-    if (fixed_start != '') { # if the start time is provided, then the time will be indexed to that time as 0
-      suppressMessages({
-        temporal_data =
-          temporal_data %>%
-          dplyr::left_join(., fixed_data %>%
-                             dplyr::select_at(c(fixed_id, fixed_start)) %>%
-                             dplyr::rename(!!rlang::parse_expr(temporal_id) := !!rlang::parse_expr(fixed_id)) %>%
-                             dplyr::rename(wiz_fixed_start_time = !!rlang::parse_expr(fixed_start))
-          ) %>%
-          dplyr::mutate(!!rlang::parse_expr(temporal_time) :=
-                          lubridate::time_length(!!rlang::parse_expr(temporal_time) - wiz_fixed_start_time, unit = step_units)) %>%
-          dplyr::select(-wiz_fixed_start_time)
-      })
-    } else {
-      temporal_data =
-        temporal_data %>%
-        dplyr::group_by(!!rlang::parse_expr(fixed_id)) %>%
-        dplyr::mutate(wiz_fixed_start_time = min(!!rlang::parse_expr(temporal_time), na.rm = TRUE)) %>%
-        dplyr::ungroup() %>%
-        dplyr::mutate(!!rlang::parse_expr(temporal_time) :=
-                        lubridate::time_length(!!rlang::parse_expr(temporal_time) - wiz_fixed_start_time, unit = step_units)) %>%
-        dplyr::select(-wiz_fixed_start_time)
-    }
   }
+
+  if (fixed_start == '') { # if the start time is not provided, then the time will be indexed to min time
+    suppressMessages({
+      fixed_data =
+        fixed_data %>%
+        dplyr::left_join(., temporal_data %>%
+                           dplyr::select_at(c(temporal_id, temporal_time)) %>%
+                           dplyr::group_by(!!rlang::parse_expr(temporal_id)) %>%
+                           dplyr::arrange(!!rlang::parse_expr(temporal_time)) %>%
+                           dplyr::slice(1) %>% # Pick the first value (temporally)
+                           dplyr::ungroup() %>%
+                           dplyr::rename(!!rlang::parse_expr(fixed_id) := !!rlang::parse_expr(temporal_id)) %>%
+                           dplyr::rename(wiz_start_time = !!rlang::parse_expr(temporal_time)))
+
+      fixed_start = 'wiz_start_time'
+    })
+  }
+
+  if (fixed_end == '') { # if the start time is not provided, then the time will be indexed to min time
+    suppressMessages({
+      fixed_data =
+        fixed_data %>%
+        dplyr::left_join(., temporal_data %>%
+                           dplyr::select_at(c(temporal_id, temporal_time)) %>%
+                           dplyr::group_by(!!rlang::parse_expr(temporal_id)) %>%
+                           dplyr::arrange(!!rlang::parse_expr(temporal_time)) %>%
+                           dplyr::slice(dplyr::n()) %>% # Pick the last value (temporally)
+                           dplyr::ungroup() %>%
+                           dplyr::rename(!!rlang::parse_expr(fixed_id) := !!rlang::parse_expr(temporal_id)) %>%
+                           dplyr::rename(wiz_end_time = !!rlang::parse_expr(temporal_time)))
+
+      fixed_end = 'wiz_end_time'
+    })
+  }
+
+  suppressMessages({
+    temporal_data =
+      temporal_data %>%
+      dplyr::left_join(., fixed_data %>%
+                         dplyr::select_at(c(fixed_id, fixed_start)) %>%
+                         dplyr::rename(!!rlang::parse_expr(temporal_id) := !!rlang::parse_expr(fixed_id)) %>%
+                         dplyr::rename(wiz_fixed_start_time = !!rlang::parse_expr(fixed_start))
+      )
+  })
+
+  if (!is.null(step_units)) {
+    temporal_data =
+      temporal_data %>%
+      dplyr::mutate(!!rlang::parse_expr(temporal_time) :=
+                      lubridate::time_length(!!rlang::parse_expr(temporal_time) - wiz_fixed_start_time, unit = step_units)) %>%
+      dplyr::select(-wiz_fixed_start_time)
+  } else {
+    temporal_data =
+      temporal_data %>%
+      dplyr::mutate(!!rlang::parse_expr(temporal_time) :=
+                      !!rlang::parse_expr(temporal_time) - wiz_fixed_start_time) %>%
+      dplyr::select(-wiz_fixed_start_time)
+  }
+
+
+  # Transform factors to characters
+  fixed_data = fixed_data %>% dplyr::mutate_if(is.factor, as.character)
+
+  # Generate a data dictionary for fixed_data
+  fixed_data_dict =
+    lapply(fixed_data, class) %>%
+    lapply(function (x) x[1]) %>% # If multiple classes, take only the first one (happens with date-times)
+    dplyr::as_tibble() %>%
+    tidyr::gather(key = 'variable', value = 'class') %>%
+    as.data.frame()
+
+  suppressWarnings({
+    temporal_data_dict =
+      wiz_build_temporal_data_dictionary(temporal_data,
+                                         temporal_variable,
+                                         temporal_value,
+                                         numeric_threshold)
+  })
+
 
   wiz_frame =
     structure(list(
-      fixed_data = fixed_data,
-      temporal_data = temporal_data,
+      fixed_data = as.data.frame(fixed_data),
+      temporal_data = as.data.frame(temporal_data),
       fixed_id = fixed_id,
       fixed_start = fixed_start,
       fixed_end = fixed_end,
@@ -169,7 +205,6 @@ wiz_build_temporal_data_dictionary = function (temporal_data,
     unique() %>%
     dplyr::tibble(variable = .) %>%
     dplyr::mutate(class = 'unsure')
-
 
   temporal_data_class = class(temporal_data[[temporal_value]])
 
@@ -256,7 +291,8 @@ wiz_categorical_to_numeric = function(wiz_frame = NULL,
                       wiz_temp_var ~ '1',
                       TRUE ~ !!rlang::parse_expr(wiz_frame$temporal_value))) %>%
     dplyr::mutate_at(dplyr::vars(!!rlang::parse_expr(wiz_frame$temporal_value)), as.numeric) %>%
-    dplyr::select(-wiz_temp_var)
+    dplyr::select(-wiz_temp_var) %>%
+    as.data.frame()
 
   suppressWarnings({wiz_frame$temporal_data_dict =
     wiz_build_temporal_data_dictionary(wiz_frame$temporal_data,

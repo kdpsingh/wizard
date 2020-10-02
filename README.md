@@ -10,6 +10,8 @@ into a form that can be modeled by prediction models.
 
 <!-- badges: start -->
 
+[![Lifecycle:
+maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://www.tidyverse.org/lifecycle/#maturing)
 <!-- badges: end -->
 
 ## Installation
@@ -150,18 +152,27 @@ wf %>%
 #> Processing variable cr...
 #> Anticipated number of rows in intermediate output: 272
 #> Anticipated number of rows in final output: 136
+#> Allocating memory...
+#> Parallel processing is ENABLED.
+#> Beginning calculation...
 #>  Progress: ---------------------------------------------------------------- 100%
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\8\RtmpwpjYBx/wiz_frame_dir/temporal_predictors_variable_cr_2020_10_01_03_39_23.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\8\RtmpyeOud2/wiz_frame_dir/temporal_predictors_variable_cr_2020_10_02_00_48_20.csv
 #> Joining, by = "id"
 #> Processing category med...
 #> Anticipated number of rows in intermediate output: 136
 #> Anticipated number of rows in final output: 136
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\8\RtmpwpjYBx/wiz_frame_dir/temporal_predictors_category_med_2020_10_01_03_39_25.csv
+#> Allocating memory...
+#> Parallel processing is ENABLED.
+#> Beginning calculation...
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\8\RtmpyeOud2/wiz_frame_dir/temporal_predictors_category_med_2020_10_02_00_48_22.csv
 #> Joining, by = "id"
 #> Processing variable cr...
 #> Anticipated number of rows in intermediate output: 136
 #> Anticipated number of rows in final output: 136
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\8\RtmpwpjYBx/wiz_frame_dir/temporal_outcomes_variable_cr_2020_10_01_03_39_26.csv
+#> Allocating memory...
+#> Parallel processing is ENABLED.
+#> Beginning calculation...
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\8\RtmpyeOud2/wiz_frame_dir/temporal_outcomes_variable_cr_2020_10_02_00_48_23.csv
 ```
 
 ## Let’s combine our output into a single data frame
@@ -181,34 +192,35 @@ model_data = wiz_combine(wf, files = dir(file.path(tempdir(), 'wiz_frame_dir')))
 #> Joining, by = c("id", "time")
 #> Joining, by = c("id", "time")
 
-dplyr::glimpse(model_data)
-#> Rows: 136
-#> Columns: 25
-#> $ id                          [3m[90m<int>[39m[23m 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, ...
-#> $ sex                         [3m[90m<chr>[39m[23m "male", "male", "male", "male", "male", "male", "male", "male", "male", "male", "mal...
-#> $ age                         [3m[90m<dbl>[39m[23m 66.15955, 66.15955, 66.15955, 66.15955, 66.15955, 66.15955, 66.15955, 66.15955, 66.1...
-#> $ race                        [3m[90m<chr>[39m[23m "asian", "asian", "asian", "asian", "asian", "asian", "asian", "asian", "asian", "as...
-#> $ baseline_cr                 [3m[90m<dbl>[39m[23m 1.0011752, 1.0011752, 1.0011752, 1.0011752, 1.0011752, 1.0011752, 1.0011752, 1.00117...
-#> $ admit_time                  [3m[90m<dttm>[39m[23m 2019-06-02 00:49:23, 2019-06-02 00:49:23, 2019-06-02 00:49:23, 2019-06-02 00:49:23,...
-#> $ dc_time                     [3m[90m<dttm>[39m[23m 2019-06-08 10:38:23, 2019-06-08 10:38:23, 2019-06-08 10:38:23, 2019-06-08 10:38:23,...
-#> $ time                        [3m[90m<int>[39m[23m 0, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108, 114, 120...
-#> $ outcome_cr_max_24           [3m[90m<dbl>[39m[23m 1.2170199, 1.2170199, 1.2170199, 1.1797219, 1.2749385, 1.2749385, 1.2749385, 1.27493...
-#> $ med_acetaminophen_any_168   [3m[90m<int>[39m[23m NA, NA, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, NA, ...
-#> $ med_acetaminophen_sum_168   [3m[90m<int>[39m[23m NA, NA, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, NA, ...
-#> $ med_aspirin_any_168         [3m[90m<int>[39m[23m NA, NA, NA, NA, NA, NA, NA, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,...
-#> $ med_aspirin_sum_168         [3m[90m<int>[39m[23m NA, NA, NA, NA, NA, NA, NA, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,...
-#> $ med_diphenhydramine_any_168 [3m[90m<int>[39m[23m NA, NA, NA, NA, NA, NA, NA, NA, NA, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ...
-#> $ med_diphenhydramine_sum_168 [3m[90m<int>[39m[23m NA, NA, NA, NA, NA, NA, NA, NA, NA, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 3, 3, 3, 3, 4, ...
-#> $ cr_length_06                [3m[90m<int>[39m[23m 1, 1, 1, 2, 1, 3, 1, 1, 3, 1, 1, 3, 2, 2, 3, 2, 2, 2, 2, 1, 2, 2, 3, 2, 4, 1, 1, 1, ...
-#> $ cr_length_12                [3m[90m<int>[39m[23m 1, 1, 1, 1, 2, 1, 3, 1, 1, 3, 1, 1, 3, 2, 2, 3, 2, 2, 2, 2, 1, 2, 2, 3, 2, 4, NA, 1,...
-#> $ cr_max_06                   [3m[90m<dbl>[39m[23m 1.0036587, 1.0036587, 1.0393216, 1.2170199, 1.1797219, 1.1659894, 1.1464653, 1.14646...
-#> $ cr_max_12                   [3m[90m<dbl>[39m[23m 1.0300977, 1.0036587, 1.0036587, 1.0393216, 1.2170199, 1.1797219, 1.1659894, 1.14646...
-#> $ cr_mean_06                  [3m[90m<dbl>[39m[23m 1.0036587, 1.0036587, 1.0393216, 1.1099852, 1.1797219, 1.0696299, 1.1464653, 1.14646...
-#> $ cr_mean_12                  [3m[90m<dbl>[39m[23m 1.0300977, 1.0036587, 1.0036587, 1.0393216, 1.1099852, 1.1797219, 1.0696299, 1.14646...
-#> $ cr_median_06                [3m[90m<dbl>[39m[23m 1.0036587, 1.0036587, 1.0393216, 1.1099852, 1.1797219, 1.0968267, 1.1464653, 1.14646...
-#> $ cr_median_12                [3m[90m<dbl>[39m[23m 1.0300977, 1.0036587, 1.0036587, 1.0393216, 1.1099852, 1.1797219, 1.0968267, 1.14646...
-#> $ cr_min_06                   [3m[90m<dbl>[39m[23m 1.0036587, 1.0036587, 1.0393216, 1.0029506, 1.1797219, 0.9460735, 1.1464653, 1.14646...
-#> $ cr_min_12                   [3m[90m<dbl>[39m[23m 1.0300977, 1.0036587, 1.0036587, 1.0393216, 1.0029506, 1.1797219, 0.9460735, 1.14646...
+head(model_data)
+#>   id  sex      age  race baseline_cr          admit_time             dc_time time outcome_cr_max_24
+#> 1  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23    0          1.217020
+#> 2  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23    6          1.217020
+#> 3  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23   12          1.217020
+#> 4  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23   18          1.179722
+#> 5  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23   24          1.274939
+#> 6  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23   30          1.274939
+#>   med_acetaminophen_any_168 med_acetaminophen_sum_168 med_aspirin_any_168 med_aspirin_sum_168
+#> 1                        NA                        NA                  NA                  NA
+#> 2                        NA                        NA                  NA                  NA
+#> 3                         1                         1                  NA                  NA
+#> 4                         1                         1                  NA                  NA
+#> 5                         1                         1                  NA                  NA
+#> 6                         1                         1                  NA                  NA
+#>   med_diphenhydramine_any_168 med_diphenhydramine_sum_168 cr_length_06 cr_length_12 cr_max_06 cr_max_12
+#> 1                          NA                          NA            1            1  1.003659  1.030098
+#> 2                          NA                          NA            1            1  1.003659  1.003659
+#> 3                          NA                          NA            1            1  1.039322  1.003659
+#> 4                          NA                          NA            2            1  1.217020  1.039322
+#> 5                          NA                          NA            1            2  1.179722  1.217020
+#> 6                          NA                          NA            3            1  1.165989  1.179722
+#>   cr_mean_06 cr_mean_12 cr_median_06 cr_median_12 cr_min_06 cr_min_12
+#> 1   1.003659   1.030098     1.003659     1.030098 1.0036587  1.030098
+#> 2   1.003659   1.003659     1.003659     1.003659 1.0036587  1.003659
+#> 3   1.039322   1.003659     1.039322     1.003659 1.0393216  1.003659
+#> 4   1.109985   1.039322     1.109985     1.039322 1.0029506  1.039322
+#> 5   1.179722   1.109985     1.179722     1.109985 1.1797219  1.002951
+#> 6   1.069630   1.179722     1.096827     1.179722 0.9460735  1.179722
 ```
 
 ## Testing wiz\_frame without writing output to files
@@ -220,56 +232,87 @@ output to file. You can accomplish this by setting `output_file` to
 ``` r
 wf %>% 
   wiz_add_predictors(variable = 'cr',
-                     lookback = lubridate::hours(12), 
-                     window = lubridate::hours(6), 
+                     lookback = hours(12), 
+                     window = hours(6), 
                      stats = c(mean = mean,
                                min = min,
                                max = max,
                                median = median,
                                length = length),
                      output_file = FALSE) %>% 
-  dplyr::glimpse()
+  head()
 #> Joining, by = "id"
 #> Processing variable cr...
 #> Anticipated number of rows in intermediate output: 272
 #> Anticipated number of rows in final output: 136
+#> Allocating memory...
+#> Parallel processing is ENABLED.
+#> Beginning calculation...
 #>  Progress: ---------------------------------------------------------------- 100%
-#> 
-#> Rows: 136
-#> Columns: 12
-#> $ id           [3m[90m<int>[39m[23m 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, ...
-#> $ time         [3m[90m<dbl>[39m[23m 0, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108, 114, 120, 126, 132, 138...
-#> $ cr_length_06 [3m[90m<dbl>[39m[23m 1, 1, 1, 2, 1, 3, 1, 1, 3, 1, 1, 3, 2, 2, 3, 2, 2, 2, 2, 1, 2, 2, 3, 2, 4, 1, 1, 1, 4, 1, 2, 1, 2, ...
-#> $ cr_length_12 [3m[90m<dbl>[39m[23m 1, 1, 1, 1, 2, 1, 3, 1, 1, 3, 1, 1, 3, 2, 2, 3, 2, 2, 2, 2, 1, 2, 2, 3, 2, 4, NA, 1, 1, 4, 1, 2, 1,...
-#> $ cr_max_06    [3m[90m<dbl>[39m[23m 1.0036587, 1.0036587, 1.0393216, 1.2170199, 1.1797219, 1.1659894, 1.1464653, 1.1464653, 1.2749385, ...
-#> $ cr_max_12    [3m[90m<dbl>[39m[23m 1.0300977, 1.0036587, 1.0036587, 1.0393216, 1.2170199, 1.1797219, 1.1659894, 1.1464653, 1.1464653, ...
-#> $ cr_mean_06   [3m[90m<dbl>[39m[23m 1.0036587, 1.0036587, 1.0393216, 1.1099852, 1.1797219, 1.0696299, 1.1464653, 1.1464653, 1.1271614, ...
-#> $ cr_mean_12   [3m[90m<dbl>[39m[23m 1.0300977, 1.0036587, 1.0036587, 1.0393216, 1.1099852, 1.1797219, 1.0696299, 1.1464653, 1.1464653, ...
-#> $ cr_median_06 [3m[90m<dbl>[39m[23m 1.0036587, 1.0036587, 1.0393216, 1.1099852, 1.1797219, 1.0968267, 1.1464653, 1.1464653, 1.0651233, ...
-#> $ cr_median_12 [3m[90m<dbl>[39m[23m 1.0300977, 1.0036587, 1.0036587, 1.0393216, 1.1099852, 1.1797219, 1.0968267, 1.1464653, 1.1464653, ...
-#> $ cr_min_06    [3m[90m<dbl>[39m[23m 1.0036587, 1.0036587, 1.0393216, 1.0029506, 1.1797219, 0.9460735, 1.1464653, 1.1464653, 1.0414223, ...
-#> $ cr_min_12    [3m[90m<dbl>[39m[23m 1.0300977, 1.0036587, 1.0036587, 1.0393216, 1.0029506, 1.1797219, 0.9460735, 1.1464653, 1.1464653, ...
+#>   id time cr_length_06 cr_length_12 cr_max_06 cr_max_12 cr_mean_06 cr_mean_12 cr_median_06 cr_median_12
+#> 1  1    0            1            1  1.003659  1.030098   1.003659   1.030098     1.003659     1.030098
+#> 2  1    6            1            1  1.003659  1.003659   1.003659   1.003659     1.003659     1.003659
+#> 3  1   12            1            1  1.039322  1.003659   1.039322   1.003659     1.039322     1.003659
+#> 4  1   18            2            1  1.217020  1.039322   1.109985   1.039322     1.109985     1.039322
+#> 5  1   24            1            2  1.179722  1.217020   1.179722   1.109985     1.179722     1.109985
+#> 6  1   30            3            1  1.165989  1.179722   1.069630   1.179722     1.096827     1.179722
+#>   cr_min_06 cr_min_12
+#> 1 1.0036587  1.030098
+#> 2 1.0036587  1.003659
+#> 3 1.0393216  1.003659
+#> 4 1.0029506  1.039322
+#> 5 1.1797219  1.002951
+#> 6 0.9460735  1.179722
 ```
 
-## You can supply a vector of variables
+## You can also supply a vector of variables
 
 ``` r
 wf %>% 
-  wiz_add_predictors(variable = c('cr', 'cr_high_no'),
-                     lookback = lubridate::weeks(1), 
+  wiz_add_predictors(variable = c('cr', 'med_aspirin'),
+                     lookback = weeks(1), 
                      stats = c(any = any),
                      output_file = FALSE) %>% 
-  dplyr::glimpse()
+  head()
 #> Joining, by = "id"
-#> Processing variable cr, cr_high_no...
+#> Processing variable cr, med_aspirin...
 #> Anticipated number of rows in intermediate output: 136
 #> Anticipated number of rows in final output: 136
-#> Rows: 136
-#> Columns: 4
-#> $ id                 [3m[90m<int>[39m[23m 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, ...
-#> $ time               [3m[90m<dbl>[39m[23m 0, 6, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108, 114, 120, 126, 13...
-#> $ cr_any_168         [3m[90m<lgl>[39m[23m TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRU...
-#> $ cr_high_no_any_168 [3m[90m<lgl>[39m[23m TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRU...
+#> Allocating memory...
+#> Parallel processing is ENABLED.
+#> Beginning calculation...
+#>   id time cr_any_168 med_aspirin_any_168
+#> 1  1    0          1                  NA
+#> 2  1    6          1                  NA
+#> 3  1   12          1                  NA
+#> 4  1   18          1                  NA
+#> 5  1   24          1                  NA
+#> 6  1   30          1                  NA
+```
+
+## Category accepts regular expressions
+
+``` r
+wf %>% 
+  wiz_add_predictors(category = 'lab|med',
+                     lookback = hours(12), 
+                     stats = c(any = any),
+                     output_file = FALSE) %>% 
+  head()
+#> Joining, by = "id"
+#> Processing category lab|med...
+#> Anticipated number of rows in intermediate output: 136
+#> Anticipated number of rows in final output: 136
+#> Allocating memory...
+#> Parallel processing is ENABLED.
+#> Beginning calculation...
+#>   id time cr_any_12 med_acetaminophen_any_12 med_aspirin_any_12 med_diphenhydramine_any_12
+#> 1  1    0         1                       NA                 NA                         NA
+#> 2  1    6         1                       NA                 NA                         NA
+#> 3  1   12         1                        1                 NA                         NA
+#> 4  1   18         1                        1                 NA                         NA
+#> 5  1   24         1                       NA                 NA                         NA
+#> 6  1   30         1                       NA                 NA                         NA
 ```
 
 ## Let’s benchmark the performance on our package
@@ -285,8 +328,8 @@ benchmark_results[['multiprocess']] =
   microbenchmark::microbenchmark(
     wf %>% 
       wiz_add_predictors(variable = 'cr',
-                         lookback = lubridate::hours(12), 
-                         window = lubridate::hours(6), 
+                         lookback = hours(12), 
+                         window = hours(6), 
                          stats = c(mean = mean,
                                    min = min,
                                    max = max,
@@ -307,8 +350,8 @@ benchmark_results[['sequential']] =
   microbenchmark::microbenchmark(
   wf %>% 
     wiz_add_predictors(variable = 'cr',
-                       lookback = lubridate::hours(12), 
-                       window = lubridate::hours(6), 
+                       lookback = hours(12), 
+                       window = hours(6), 
                        stats = c(mean = mean,
                                  min = min,
                                  max = max,
@@ -319,47 +362,21 @@ benchmark_results[['sequential']] =
   )
 ```
 
-### Implementation in the prior version (using `dplyr::group_modify()`)
-
-``` r
-benchmark_results[['group_modify']] =
-  microbenchmark::microbenchmark(
-    wf %>% 
-      wiz_add_predictors_group_modify(variable = 'cr',
-                                      lookback = lubridate::hours(12), 
-                                      window = lubridate::hours(6), 
-                                      stats = c(mean = mean,
-                                                min = min,
-                                                max = max,
-                                                median = median,
-                                                length = length),
-                                      output_file = FALSE),
-    times = 1
-  )
-```
-
 ## Benchmark results
 
 ``` r
 benchmark_results
 #> $multiprocess
 #> Unit: seconds
-#>                                                                                                                                                                                                                          expr
-#>  wf %>% wiz_add_predictors(variable = "cr", lookback = lubridate::hours(12),      window = lubridate::hours(6), stats = c(mean = mean, min = min,          max = max, median = median, length = length), output_file = FALSE)
+#>                                                                                                                                                                                                    expr
+#>  wf %>% wiz_add_predictors(variable = "cr", lookback = hours(12),      window = hours(6), stats = c(mean = mean, min = min, max = max,          median = median, length = length), output_file = FALSE)
 #>       min       lq     mean   median       uq      max neval
-#>  3.733246 3.733246 3.733246 3.733246 3.733246 3.733246     1
+#>  3.837209 3.837209 3.837209 3.837209 3.837209 3.837209     1
 #> 
 #> $sequential
 #> Unit: seconds
-#>                                                                                                                                                                                                                          expr
-#>  wf %>% wiz_add_predictors(variable = "cr", lookback = lubridate::hours(12),      window = lubridate::hours(6), stats = c(mean = mean, min = min,          max = max, median = median, length = length), output_file = FALSE)
+#>                                                                                                                                                                                                    expr
+#>  wf %>% wiz_add_predictors(variable = "cr", lookback = hours(12),      window = hours(6), stats = c(mean = mean, min = min, max = max,          median = median, length = length), output_file = FALSE)
 #>       min       lq     mean   median       uq      max neval
-#>  8.568165 8.568165 8.568165 8.568165 8.568165 8.568165     1
-#> 
-#> $group_modify
-#> Unit: seconds
-#>                                                                                                                                                                                                                                       expr
-#>  wf %>% wiz_add_predictors_group_modify(variable = "cr", lookback = lubridate::hours(12),      window = lubridate::hours(6), stats = c(mean = mean, min = min,          max = max, median = median, length = length), output_file = FALSE)
-#>       min       lq     mean   median       uq      max neval
-#>  5.714483 5.714483 5.714483 5.714483 5.714483 5.714483     1
+#>  10.63343 10.63343 10.63343 10.63343 10.63343 10.63343     1
 ```

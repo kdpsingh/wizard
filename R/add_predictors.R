@@ -1,244 +1,6 @@
-#' New add_predictors function using group_modify
-#' @export
-wiz_add_predictors_group_modify = function(wiz_frame = NULL,
-                              variable = NULL,
-                              category = NULL,
-                              lookback = hours(48),
-                              window = lookback,
-                              stats = c(mean = mean,
-                                        min = min,
-                                        max = max),
-                              impute = TRUE,
-                              output_file = TRUE) {
-
-  if (is.null(variable) && is.null(category)) {
-    stop('You must specify either a variable or a category')
-  }
-
-  if (!is.null(variable) && !is.null(category)) {
-    stop('You must specify only a variable or a category, not both.')
-  }
-
-  if (!is.null(variable) && !variable %in% wiz_frame$temporal_data_dict$variable) {
-    stop(paste0('The variable ', variable, ' could not be found in the temporal data.'))
-  }
-
-  if (!is.null(category) && !category %in% wiz_frame$temporal_data[[wiz_frame$temporal_category]]) {
-    stop(paste0('The category ', category, ' could not be found in the temporal data.'))
-  }
-
-  wiz_variable = variable
-  wiz_category = category
-
-  lookback_converted = lubridate::time_length(lookback, unit = wiz_frame$step_units)
-  window_converted = lubridate::time_length(window, unit = wiz_frame$step_units)
-
-  if (lookback_converted == 0) {
-    stop('lookback/lookahead cannot be 0.')
-  }
-  if (window_converted == 0) {
-    stop('window cannot be 0.')
-  }
-
-  if ((lookback_converted > 0 && window_converted < 0) ||
-      (lookback_converted < 0 && window_converted > 0)) {
-    stop(paste0('The lookback/lookahead and window must either *both* be positive ',
-                '(for lookback) or *both* negative (for lookahead).'))
-  }
-
-  if (lookback_converted %% window_converted != 0) {
-    stop ('The lookback must be divisible by the window (with no remainder).')
-  }
-
-
-  temporal_data_of_interest =
-    wiz_frame$temporal_data %>%
-    dplyr::group_by(!!rlang::parse_expr(wiz_frame$temporal_id)) %>%
-    dplyr::mutate(wiz_step_time =
-                    !!rlang::parse_expr(wiz_frame$temporal_time) %/%
-                    wiz_frame$step *
-                    wiz_frame$step +
-                    wiz_frame$step) %>%
-    dplyr::mutate(wiz_lookback_time =
-                    wiz_step_time - lookback_converted) %>%
-    dplyr::ungroup()
-
-
-  if (wiz_frame$fixed_end != '') { # need to test this
-    max_step_times_per_id =
-      temporal_data_of_interest %>%
-      dplyr::left_join(., wiz_frame$fixed_data %>%
-                         dplyr::select_at(c(wiz_frame$fixed_id, wiz_frame$fixed_start, wiz_frame$fixed_end)) %>%
-                         dplyr::rename(!!rlang::parse_expr(wiz_frame$temporal_id) := !!rlang::parse_expr(wiz_frame$fixed_id)) %>%
-                         dplyr::mutate(wiz_fixed_start_time = !!rlang::parse_expr(wiz_frame$fixed_start)) %>%
-                         dplyr::mutate(wiz_fixed_end_time = !!rlang::parse_expr(wiz_frame$fixed_end))
-      ) %>%
-      dplyr::distinct(!!rlang::parse_expr(wiz_frame$temporal_id), wiz_fixed_start_time, wiz_fixed_end_time) %>%
-      dplyr::mutate(wiz_step_time =
-                      lubridate::time_length(wiz_fixed_end_time - wiz_fixed_start_time, unit = wiz_frame$step_units) %/% wiz_frame$step * wiz_frame$step) %>% # will select furthest time with complete step data
-      dplyr::select(!!rlang::parse_expr(wiz_frame$temporal_id), wiz_step_time)
-  } else {
-    max_step_times_per_id =
-      temporal_data_of_interest %>%
-      dplyr::group_by(!!rlang::parse_expr(wiz_frame$temporal_id)) %>%
-      dplyr::filter(wiz_step_time == max(wiz_step_time)) %>%
-      dplyr::ungroup() %>%
-      dplyr::distinct(!!rlang::parse_expr(wiz_frame$temporal_id), wiz_step_time)
-  }
-
-  if (!is.null(variable)) {
-    temporal_data_of_interest =
-      temporal_data_of_interest %>%
-      dplyr::filter(!!rlang::parse_expr(wiz_frame$temporal_variable) %in% wiz_variable)
-  } else if (!is.null(category)) {
-    temporal_data_of_interest =
-      temporal_data_of_interest %>%
-      dplyr::filter(stringr::str_detect(!!rlang::parse_expr(wiz_frame$temporal_category), wiz_category))
-    } else {
-    stop('This option should not be possible.')
-  }
-
-  if (!is.null(variable)) {
-    message(paste0('Processing variable ', paste0(variable, collapse = ', '), '...'))
-  } else if (!is.null(category)) {
-    message(paste0('Processing category ', category, '...'))
-  }
-
-  intermediate_output_rows = max_step_times_per_id %>%
-    dplyr::filter(wiz_step_time >= 0) %>%
-    dplyr::pull(wiz_step_time) %>%
-    {. / wiz_frame$step + 1} %>% # e.g., if max step for an id is 18 and step is 6, there will rows for 0, 6, 12, 18 (or 18/6 + 1 rows)
-    {sum(.)} %>%
-    {. * lookback_converted/window_converted} # Only for intermediate output
-    # {. * length(unique(temporal_data_of_interest[[wiz_frame$temporal_variable]]))} # num variables
-
-  message(paste0('Anticipated number of rows in intermediate output: ', intermediate_output_rows))
-
-  final_output_rows = max_step_times_per_id %>%
-    dplyr::filter(wiz_step_time >= 0) %>%
-    dplyr::pull(wiz_step_time) %>%
-    {. / wiz_frame$step + 1} %>% # e.g., if max step for an id is 18 and step is 6, there will rows for 0, 6, 12, 18 (or 18/6 + 1 rows)
-    {sum(.)}
-
-  message(paste0('Anticipated number of rows in final output: ', final_output_rows))
-
-  output_frame =
-    dplyr::tibble(!!rlang::parse_expr(wiz_frame$temporal_id) :=
-                    unique(wiz_frame$temporal_data[[wiz_frame$temporal_id]])) %>%
-    tidyr::crossing(
-      dplyr::tibble(
-                  !!rlang::parse_expr(wiz_frame$temporal_variable) :=
-                    unique(temporal_data_of_interest[[wiz_frame$temporal_variable]]))) %>%
-    dplyr::group_by(!!rlang::parse_expr(wiz_frame$temporal_id),
-                    !!rlang::parse_expr(wiz_frame$temporal_variable)) %>%
-    dplyr::group_modify(~wiz_define_steps(.y,
-                                   wiz_frame$temporal_id,
-                                   wiz_frame$step,
-                                   max_step_times_per_id,
-                                   lookback_converted,
-                                   window_converted))
-
-  total_num_groups = nrow(output_frame)
-
-  pb = progress::progress_bar$new(format = "[:bar] :current/:total (:percent) Time remaining: :eta",
-                                  total = total_num_groups)
-
-  pb$tick(0)
-
-  output_frame =
-    output_frame %>%
-    dplyr::group_by(!!rlang::parse_expr(wiz_frame$temporal_id),
-                  #  !!rlang::parse_expr(wiz_frame$temporal_variable),
-                    time,
-                    window_time) %>%
-    dplyr::group_modify(~wiz_calc_stats(.y,
-                                        wiz_frame$temporal_id,
-                                        wiz_frame$temporal_variable,
-                                        wiz_frame$temporal_value,
-                                        stats,
-                                        lookback_converted, window_converted,
-                                        temporal_data_of_interest, total_num_groups, pb)) %>%
-    dplyr::ungroup()
-
-
-  if (lookback_converted < 0) {
-    file_type = '_outcomes_'
-  } else {
-    file_type = '_predictors_'
-  }
-
-  output_file_name = if (!is.null(category)) {
-    file.path(wiz_frame$output_folder,
-              paste0('temporal', file_type, '_category_', category, '_', lubridate::now()) %>%
-                janitor::make_clean_names() %>%
-                paste0('.csv'))
-  } else {
-    file.path(wiz_frame$output_folder,
-              paste0('temporal',  file_type, '_variable_', paste0(variable, collapse = '_'),
-                     '_', lubridate::now()) %>%
-                janitor::make_clean_names() %>%
-                paste0('.csv'))
-  }
-
-  output_frame =
-    output_frame %>%
-    dplyr::mutate(variable =
-                    paste0(!!rlang::parse_expr(wiz_frame$temporal_variable),
-                           '_', wiz_stat),
-                  value = wiz_value) %>%
-    dplyr::select(-wiz_stat, -wiz_value) %>%
-    # tidyr::gather(variable, value, -!!rlang::parse_expr(wiz_frame$temporal_id),
-    #               -wiz_variable, -time, -window_time) %>%
-    # # dplyr::filter(stringr::str_detect(variable,
-    # #                                  paste0('^', wiz_variable, '_.*?_.*?_[0-9.]+$'))) %>%
-    # dplyr::select(-wiz_variable) %>%
-    dplyr::mutate(value = dplyr::na_if(value, -Inf)) %>%
-    dplyr::mutate(value = dplyr::na_if(value, Inf)) %>%
-    {.[is.na(.)] = NA_real_; .}
-
-
-  if (lookback_converted < 0) { # e.g. if it is a lookahead
-    output_frame =
-      output_frame %>%
-      dplyr::mutate(variable = paste0('outcome_',variable, '_',
-                                      stringr::str_pad(abs(window_time),
-                                                       nchar(abs(lookback_converted)), pad = '0'))) %>%
-      dplyr::select(-window_time)
-  } else { # if it is a lookback
-    output_frame =
-      output_frame %>%
-      dplyr::mutate(variable = paste0(variable, '_',
-                                      stringr::str_pad(abs(window_time),
-                                                       nchar(abs(lookback_converted)), pad = '0'))) %>%
-      dplyr::select(-window_time)
-  }
-
-  if (impute) {
-    output_frame =
-      output_frame %>%
-      dplyr::group_by(!!rlang::parse_expr(wiz_frame$temporal_id), variable) %>% # Do not group by time because values need to fill across different times
-      dplyr::arrange(!!rlang::parse_expr(wiz_frame$temporal_id), variable, time) %>%
-      tidyr::fill(-!!rlang::parse_expr(wiz_frame$temporal_id), -variable, -time) %>%
-      dplyr::ungroup()
-  }
-
-  output_frame =
-    output_frame %>%
-    tidyr::spread(variable, value)
-
-  if (output_file == TRUE) {
-    data.table::fwrite(output_frame, output_file_name)
-    message(paste0('The output file was written to: ', output_file_name))
-    return(invisible(wiz_frame))
-  }
-
-  return(output_frame)
-}
-
 #' New internal helper function
 wiz_define_steps = function(groups, temporal_id, step, max_step_times_per_id,
                             lookback_converted, window_converted) {
-
 
   # check to make sure no one has missing time in temporal_data
   # check to make sure all patients in temporal_data
@@ -351,8 +113,13 @@ wiz_add_predictors = function(wiz_frame = NULL,
   wiz_variable = variable
   wiz_category = category
 
-  lookback_converted = lubridate::time_length(lookback, unit = wiz_frame$step_units)
-  window_converted = lubridate::time_length(window, unit = wiz_frame$step_units)
+  if (!is.null(wiz_frame$step_units)) {
+    lookback_converted = lubridate::time_length(lookback, unit = wiz_frame$step_units)
+    window_converted = lubridate::time_length(window, unit = wiz_frame$step_units)
+  } else {
+    lookback_converted = lookback
+    window_converted = window
+  }
 
   if (lookback_converted == 0) {
     stop('lookback/lookahead cannot be 0.')
@@ -388,26 +155,28 @@ wiz_add_predictors = function(wiz_frame = NULL,
     dplyr::ungroup()
 
 
-  if (wiz_frame$fixed_end != '') { # need to test this
+  # fixed_end and fixed_start should *always* be available now because they are now created if not provided
+  max_step_times_per_id =
+    temporal_data_of_interest %>%
+    dplyr::left_join(., wiz_frame$fixed_data %>%
+                       dplyr::select_at(c(wiz_frame$fixed_id, wiz_frame$fixed_start, wiz_frame$fixed_end)) %>%
+                       dplyr::rename(!!rlang::parse_expr(wiz_frame$temporal_id) := !!rlang::parse_expr(wiz_frame$fixed_id)) %>%
+                       dplyr::mutate(wiz_fixed_start_time = !!rlang::parse_expr(wiz_frame$fixed_start)) %>%
+                       dplyr::mutate(wiz_fixed_end_time = !!rlang::parse_expr(wiz_frame$fixed_end))
+    ) %>%
+    dplyr::distinct(!!rlang::parse_expr(wiz_frame$temporal_id), wiz_fixed_start_time, wiz_fixed_end_time)
+
+  if (!is.null(wiz_frame$step_units)) {
     max_step_times_per_id =
-      temporal_data_of_interest %>%
-      dplyr::left_join(., wiz_frame$fixed_data %>%
-                         dplyr::select_at(c(wiz_frame$fixed_id, wiz_frame$fixed_start, wiz_frame$fixed_end)) %>%
-                         dplyr::rename(!!rlang::parse_expr(wiz_frame$temporal_id) := !!rlang::parse_expr(wiz_frame$fixed_id)) %>%
-                         dplyr::mutate(wiz_fixed_start_time = !!rlang::parse_expr(wiz_frame$fixed_start)) %>%
-                         dplyr::mutate(wiz_fixed_end_time = !!rlang::parse_expr(wiz_frame$fixed_end))
-      ) %>%
-      dplyr::distinct(!!rlang::parse_expr(wiz_frame$temporal_id), wiz_fixed_start_time, wiz_fixed_end_time) %>%
+      max_step_times_per_id %>%
       dplyr::mutate(wiz_step_time =
                       lubridate::time_length(wiz_fixed_end_time - wiz_fixed_start_time, unit = wiz_frame$step_units) %/% wiz_frame$step * wiz_frame$step) %>% # will select furthest time with complete step data
       dplyr::select(!!rlang::parse_expr(wiz_frame$temporal_id), wiz_step_time)
   } else {
     max_step_times_per_id =
-      temporal_data_of_interest %>%
-      dplyr::group_by(!!rlang::parse_expr(wiz_frame$temporal_id)) %>%
-      dplyr::filter(wiz_step_time == max(wiz_step_time)) %>%
-      dplyr::ungroup() %>%
-      dplyr::distinct(!!rlang::parse_expr(wiz_frame$temporal_id), wiz_step_time)
+      max_step_times_per_id %>%
+      dplyr::mutate(wiz_step_time = (wiz_fixed_end_time - wiz_fixed_start_time) %/% wiz_frame$step * wiz_frame$step) %>% # will select furthest time with complete step data
+      dplyr::select(!!rlang::parse_expr(wiz_frame$temporal_id), wiz_step_time)
   }
 
   if (!is.null(variable)) {
@@ -466,17 +235,19 @@ wiz_add_predictors = function(wiz_frame = NULL,
 
   total_num_groups = nrow(output_frame)
 
-  message('Beginning calculation...')
-
   if ('sequential' %in% class(future::plan())) {
     strategy = 'sequential'
+    message('Parallel processing is DISABLED. Calculations are happening sequentially.')
     pb = progress::progress_bar$new(format = "[:bar] :current/:total (:percent) Time remaining: :eta",
-                                    total = total_num_groups)
+                                    total = intermediate_output_rows)
 
     pb$tick(0)
   } else {
     strategy = 'parallel'
+    message('Parallel processing is ENABLED.')
   }
+
+  message('Beginning calculation...')
 
   output_list =
     output_frame %>%
@@ -484,6 +255,7 @@ wiz_add_predictors = function(wiz_frame = NULL,
                     time,
                     window_time) %>%
     dplyr::group_split(.keep = TRUE)
+
   suppressWarnings({
     output_frame =
       output_list %>%
@@ -607,7 +379,8 @@ wiz_add_predictors = function(wiz_frame = NULL,
 
   output_frame =
     output_frame %>%
-    tidyr::spread(wiz_variable, wiz_value)
+    tidyr::spread(wiz_variable, wiz_value) %>%
+    as.data.frame()
 
   if (output_file == TRUE) {
     data.table::fwrite(output_frame, output_file_name)
