@@ -1,0 +1,97 @@
+---
+title: "Preparing a dataset for a simple language model"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Preparing a dataset for a simple language model}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r, eval = FALSE}
+library(wizard)
+```
+
+## Let's start by loading the mtsamples dataset
+
+We can find this in the `clinspacy` package (on GitHub).
+
+```{r}
+library(dplyr)
+library(tidytext)
+
+mtsamples = clinspacy::dataset_mtsamples()
+
+nrow(mtsamples)
+
+mtsamples$transcription[[1]]
+```
+
+## Let's combine the text from all of the notes into one string
+
+```{r}
+dataset = data.frame(id = 1:500, 
+                     variable = 'variable',
+                     text = mtsamples$transcription[1:500], 
+                     stringsAsFactors = FALSE)
+
+dataset = 
+  dataset %>% 
+  unnest_character_shingles(char, text, n = 1, strip_non_alphanum = FALSE) %>% 
+  group_by(id) %>% 
+  mutate(sequence_num = row_number()) %>% 
+  ungroup()
+
+cat(dataset$char[1:100])
+```
+
+## Let's generate a wiz_frame
+
+```{r}
+char_frame = wiz_frame(fixed_data = dataset %>% distinct(id), 
+                       temporal_data = dataset %>% filter(id == 1),
+                       fixed_id = 'id',
+                       temporal_id = 'id',
+                       temporal_time = 'sequence_num',
+                       temporal_variable = 'variable',
+                       temporal_value = 'char',
+                       step = 1,
+                       output_folder = 'Z:/kdpsingh/wiz_char_lang')
+```
+
+## Let's generate a dataset that will predict the next letter using the last 5 letters
+
+```{r}
+future::plan('multisession')
+
+model_predictors = char_frame %>% 
+  wiz_add_predictors(variables = 'variable', 
+                     lookback = 5,
+                     window = 1, 
+                     stats = c(first = . %>% .[1]),
+                     output_file = FALSE)
+
+
+model_outcome = char_frame %>% 
+  wiz_add_outcomes(variables = 'variable', 
+                   lookahead = 1,
+                   stats = c(first = . %>% .[1]),
+                   output_file = FALSE)
+```
+
+## Combine the datasets
+
+```{r}
+model_data = wiz_combine(char_frame, 
+                         model_outcome, 
+                         model_predictors)
+
+head(model_data)
+```
+

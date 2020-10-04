@@ -43,9 +43,9 @@ library(wizard)
 library(magrittr)
 library(lubridate)
 
-future::plan('multiprocess')
+future::plan('multisession')
 
-unlink(file.path(tempdir(), 'wiz_frame_dir', '*.*'))
+unlink(file.path(tempdir(), 'wizard_dir', '*.*'))
 
 wf = wiz_frame(fixed_data = sample_fixed_data,
                temporal_data = sample_temporal_data %>% dplyr::filter(id %in% 1:10),
@@ -58,7 +58,7 @@ wf = wiz_frame(fixed_data = sample_fixed_data,
                temporal_category = 'category',
                temporal_value = 'value',
                step = hours(6),
-               output_folder = file.path(tempdir(), 'wiz_frame_dir'))
+               output_folder = file.path(tempdir(), 'wizard_dir'))
 ```
 
 ## Let's look at the automatically generated data dictionaries
@@ -80,7 +80,7 @@ wf$temporal_data_dict
 
 ```{r}
 wf = wf %>% 
-  wiz_categorical_to_numeric()
+  wiz_dummy_code()
 ```
 
 
@@ -100,7 +100,7 @@ If, however, you set `output_file` to `FALSE`, then your actual output is return
 
 ```{r}
 wf %>%           
-  wiz_add_predictors(variable = 'cr', # Note: You can supply a vector of variables
+  wiz_add_predictors(variables = 'cr', # Note: You can supply a vector of variables
                      lookback = hours(12), 
                      window = hours(6), 
                      stats = c(mean = mean,
@@ -113,7 +113,7 @@ wf %>%
                      stats = c(sum = sum,
                                any = any),
                      impute = FALSE) %>% # Note: do *not* perform carry-forward imputation 
-  wiz_add_outcomes(variable = 'cr',
+  wiz_add_outcomes(variables = 'cr',
                    lookahead = hours(24), 
                    stats = c(max = max))
 ```
@@ -125,7 +125,7 @@ You can either provide `wiz_combine()` with a set of data frames or files separa
 This resulting frame is essentially ready for modeling (using `tidymodels`, for example). Make sure to keep individual patients in the same fold if you divide this dataset into multiple folds.
 
 ```{r}
-model_data = wiz_combine(wf, files = dir(file.path(tempdir(), 'wiz_frame_dir')))
+model_data = wiz_combine(wf, files = dir(file.path(tempdir(), 'wizard_dir')))
 
 head(model_data)
 ```
@@ -137,7 +137,7 @@ If you want to simply test `wiz_frame`, you may prefer not to write your output 
 
 ```{r}
 wf %>% 
-  wiz_add_predictors(variable = 'cr',
+  wiz_add_predictors(variables = 'cr',
                      lookback = hours(12), 
                      window = hours(6), 
                      stats = c(mean = mean,
@@ -153,7 +153,7 @@ wf %>%
 
 ```{r}
 wf %>% 
-  wiz_add_predictors(variable = c('cr', 'med_aspirin'),
+  wiz_add_predictors(variables = c('cr', 'med_aspirin'),
                      lookback = weeks(1), 
                      stats = c(any = any),
                      output_file = FALSE) %>% 

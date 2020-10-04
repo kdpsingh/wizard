@@ -3,8 +3,8 @@
 wiz_frame = function(fixed_data,
                      temporal_data,
                      fixed_id = 'id',
-                     fixed_start = '',
-                     fixed_end = '',
+                     fixed_start = NULL,
+                     fixed_end = NULL,
                      temporal_id = 'id',
                      temporal_time = 'time',
                      temporal_variable = 'variable',
@@ -17,17 +17,17 @@ wiz_frame = function(fixed_data,
   assertthat::assert_that('data.frame' %in% class(fixed_data))
   assertthat::assert_that('data.frame' %in% class(temporal_data))
 
-  if (fixed_start != '') {
-    if (class(fixed_data[[fixed_start]])[1] %in% c('Date', 'POSIXct', 'POSIXt') &
+  if (!is.null(fixed_start)) {
+    if (class(fixed_data[[fixed_start]])[1] %in% c('Date', 'POSIXct', 'POSIXt') &&
         class(step) != 'Period') {
       stop('Both the fixed_start column in the fixed_data and step must be in the same units.')
     }
-    if (is.numeric(fixed_data[[fixed_start]]) & !is.numeric(step)) {
+    if (is.numeric(fixed_data[[fixed_start]]) && !is.numeric(step)) {
       stop('Both the fixed_start column in the fixed_data and step must be in the same units.')
     }
   }
 
-  if (fixed_end != '') {
+  if (!is.null(fixed_end)) {
     if (class(fixed_data[[fixed_end]])[1] %in% c('Date', 'POSIXct', 'POSIXt') &
         class(step) != 'Period') {
       stop('Both the fixed_end column in the fixed_data and step must be in the same units.')
@@ -37,15 +37,14 @@ wiz_frame = function(fixed_data,
     }
   }
 
-  if (fixed_end != '') {
-    if (class(temporal_data[[temporal_time]])[1] %in% c('Date', 'POSIXct', 'POSIXt') &
-        class(step) != 'Period') {
-      stop('Both the temporal_time column in the temporal_data and step must be in the same units.')
-    }
-    if (is.numeric(temporal_data[[temporal_time]]) & !is.numeric(step)) {
-      stop('Both the temporal_time column in the temporal_data and step must be in the same units.')
-    }
+  if (class(temporal_data[[temporal_time]])[1] %in% c('Date', 'POSIXct', 'POSIXt') &&
+      class(step) != 'Period') {
+    stop('Both the temporal_time column in the temporal_data and step must be in the same units.')
   }
+  if (is.numeric(temporal_data[[temporal_time]]) && !is.numeric(step)) {
+    stop('Both the temporal_time column in the temporal_data and step must be in the same units.')
+  }
+
 
   if (is.null(output_folder)) {
     stop('You must specify an output folder.')
@@ -55,7 +54,7 @@ wiz_frame = function(fixed_data,
     if (tolower(readline('This folder does not exist. Would you like it to be created (y/n)? ')) %in% c('y', 'yes')) {
       dir.create(output_folder)
     } else {
-    stop(paste0('The output folder ', output_folder, ' could not be created.'))
+      stop(paste0('The output folder ', output_folder, ' could not be created.'))
     }
   }
 
@@ -81,7 +80,7 @@ wiz_frame = function(fixed_data,
     }
   }
 
-  if (fixed_start == '') { # if the start time is not provided, then the time will be indexed to min time
+  if (is.null(fixed_start)) { # if the start time is not provided, then the time will be indexed to min time
     suppressMessages({
       fixed_data =
         fixed_data %>%
@@ -98,7 +97,7 @@ wiz_frame = function(fixed_data,
     })
   }
 
-  if (fixed_end == '') { # if the start time is not provided, then the time will be indexed to min time
+  if (is.null(fixed_end)) { # if the start time is not provided, then the time will be indexed to min time
     suppressMessages({
       fixed_data =
         fixed_data %>%
@@ -142,6 +141,7 @@ wiz_frame = function(fixed_data,
 
   # Transform factors to characters
   fixed_data = fixed_data %>% dplyr::mutate_if(is.factor, as.character)
+  temporal_data = temporal_data %>% dplyr::mutate_if(is.factor, as.character)
 
   # Generate a data dictionary for fixed_data
   fixed_data_dict =
@@ -212,7 +212,7 @@ wiz_build_temporal_data_dictionary = function (temporal_data,
   # If all variables are numeric/integer
     temporal_data_dict =
       temporal_data_dict %>%
-      dplyr::mutate(class = temporal_data_class)
+      dplyr::mutate(class = 'numeric')
   } else {
     # If not, check data type for each temporal variable
     for (temporal_data_var in temporal_data_dict$variable) {
@@ -251,48 +251,69 @@ wiz_build_temporal_data_dictionary = function (temporal_data,
     }
   }
 
-  temporal_data_dict = temporal_data_dict %>% as.data.frame()
+  temporal_data_dict =
+    temporal_data_dict %>%
+    dplyr::arrange(variable) %>%
+    as.data.frame()
   temporal_data_dict
 }
 
 #' Function that converts categorical temporal predictors into dummy variables
 #'
-#' @param encoding How to encode categorical variables. Options include
-#' \code{"one_hot"} for one-hot encoding, \code{"ref"} for reference encoding
-#' where the first level (alphabetically) becomes the reference class, and
-#' \code{"ref_for_binary"}, which reference-encodes categorical variables with
-#' 2 levels and one-hot-encodes categorical variables with 3+ levels. Defaults
-#' to \code{"one_hot"}.
+#' Note that you can you can use this to dummy code variables with numerical values
+#' where the values are supposed to map to categorical levels (e.g, 1 means high and 2
+#' means low).
 #'
-#' Internal function right now because only supports one_hot encoding
+#' Either provide a threshold (defaults to 0.5) or provide a vector of variables.
+#' If you supply a vector of variables, this takes precedence over the numeric threshold.
 #' @export
-wiz_categorical_to_numeric = function(wiz_frame = NULL,
-                                      encoding = 'one_hot',
-                                      numeric_threshold = 0.5) {
+wiz_dummy_code = function(wiz_frame = NULL,
+                          numeric_threshold = 0.5,
+                          variables = NULL) {
 
-  categorical_vars = wiz_frame$temporal_data_dict %>%
-    dplyr::filter(class == 'character') %>%
-    dplyr::pull(variable)
+  if (is.null(variables)) { # if you do NOT supply a vector of variables (the default)
 
-  if (length(categorical_vars) == 0) {
-    stop('There are no categorical variables. There is no need to apply wiz_categorical_to_numeric().')
+    categorical_vars = wiz_frame$temporal_data_dict %>%
+      dplyr::filter(class == 'character') %>%
+      dplyr::pull(variable)
+
+    if (length(categorical_vars) == 0) {
+      stop(paste('There are no categorical variables. There is no need to apply wiz_dummy_code(). ',
+                 'To override this, please supply a vector of variable names to the variables argument.'))
+    }
+
+    wiz_frame$temporal_data = wiz_frame$temporal_data %>%
+      dplyr::mutate(wiz_temp_var = (!!rlang::parse_expr(wiz_frame$temporal_variable)) %in% categorical_vars) %>%
+      dplyr::mutate(!!rlang::parse_expr(wiz_frame$temporal_variable) :=
+                      dplyr::case_when(
+                        wiz_temp_var ~ paste0(!!rlang::parse_expr(wiz_frame$temporal_variable),
+                                              '_',
+                                              !!rlang::parse_expr(wiz_frame$temporal_value)),
+                        TRUE ~ !!rlang::parse_expr(wiz_frame$temporal_variable)))  %>%
+      dplyr::mutate(!!rlang::parse_expr(wiz_frame$temporal_value) :=
+                      dplyr::case_when(
+                        wiz_temp_var ~ '1',
+                        TRUE ~ !!rlang::parse_expr(wiz_frame$temporal_value))) %>%
+      dplyr::mutate_at(dplyr::vars(!!rlang::parse_expr(wiz_frame$temporal_value)), as.numeric) %>%
+      dplyr::select(-wiz_temp_var) %>%
+      as.data.frame()
+  } else { # if you specify a vector of variables
+    wiz_frame$temporal_data = wiz_frame$temporal_data %>%
+      dplyr::mutate(wiz_temp_var = (!!rlang::parse_expr(wiz_frame$temporal_variable)) %in% variables) %>%
+      dplyr::mutate(!!rlang::parse_expr(wiz_frame$temporal_variable) :=
+                      dplyr::case_when(
+                        wiz_temp_var ~ paste0(!!rlang::parse_expr(wiz_frame$temporal_variable),
+                                              '_',
+                                              !!rlang::parse_expr(wiz_frame$temporal_value)),
+                        TRUE ~ !!rlang::parse_expr(wiz_frame$temporal_variable)))  %>%
+      dplyr::mutate(!!rlang::parse_expr(wiz_frame$temporal_value) :=
+                      dplyr::case_when(
+                        wiz_temp_var ~ '1',
+                        TRUE ~ !!rlang::parse_expr(wiz_frame$temporal_value))) %>%
+      dplyr::mutate_at(dplyr::vars(!!rlang::parse_expr(wiz_frame$temporal_value)), as.numeric) %>%
+      dplyr::select(-wiz_temp_var) %>%
+      as.data.frame()
   }
-
-  wiz_frame$temporal_data = wiz_frame$temporal_data %>%
-    dplyr::mutate(wiz_temp_var = (!!rlang::parse_expr(wiz_frame$temporal_variable)) %in% categorical_vars) %>%
-    dplyr::mutate(!!rlang::parse_expr(wiz_frame$temporal_variable) :=
-                    dplyr::case_when(
-                      wiz_temp_var ~ paste0(!!rlang::parse_expr(wiz_frame$temporal_variable),
-                                            '_',
-                                            !!rlang::parse_expr(wiz_frame$temporal_value)),
-               TRUE ~ !!rlang::parse_expr(wiz_frame$temporal_variable)))  %>%
-    dplyr::mutate(!!rlang::parse_expr(wiz_frame$temporal_value) :=
-                    dplyr::case_when(
-                      wiz_temp_var ~ '1',
-                      TRUE ~ !!rlang::parse_expr(wiz_frame$temporal_value))) %>%
-    dplyr::mutate_at(dplyr::vars(!!rlang::parse_expr(wiz_frame$temporal_value)), as.numeric) %>%
-    dplyr::select(-wiz_temp_var) %>%
-    as.data.frame()
 
   suppressWarnings({wiz_frame$temporal_data_dict =
     wiz_build_temporal_data_dictionary(wiz_frame$temporal_data,

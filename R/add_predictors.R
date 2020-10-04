@@ -66,7 +66,7 @@ wiz_calc_stats = function(groups, temporal_id, temporal_variable, temporal_value
                         unique(temporal_data_of_interest[[temporal_variable]])),
         dplyr::tibble(wiz_stat = names(stats))
       ) %>%
-      dplyr::mutate(wiz_value = NA_real_)
+      dplyr::mutate(wiz_value = NA)
   }
 
   pb$tick()
@@ -79,7 +79,7 @@ wiz_calc_stats = function(groups, temporal_id, temporal_variable, temporal_value
 #' #' New add_predictors function using group_modify
 #' @export
 wiz_add_predictors = function(wiz_frame = NULL,
-                              variable = NULL,
+                              variables = NULL,
                               category = NULL,
                               lookback = hours(48),
                               window = lookback,
@@ -87,30 +87,30 @@ wiz_add_predictors = function(wiz_frame = NULL,
                                         min = min,
                                         max = max),
                               impute = TRUE,
-                              output_file = TRUE) {
+                              output_file = TRUE,
+                              check_size_only = FALSE) {
 
-  if ('character' %in% wiz_frame$temporal_data_dict$class) {
-    stop(paste0('You must convert all categorical temporal predictors to ',
-    'numeric using wiz_categorical_to_numeric() before adding predictors/outcomes.'))
+  if (is.null(variables) && is.null(category)) {
+    stop('You must specify either a variable or a category.')
   }
 
-  if (is.null(variable) && is.null(category)) {
-    stop('You must specify either a variable or a category')
-  }
-
-  if (!is.null(variable) && !is.null(category)) {
+  if (!is.null(variables) && !is.null(category)) {
     stop('You must specify only a variable or a category, not both.')
   }
 
-  if (!is.null(variable) && !variable %in% wiz_frame$temporal_data_dict$variable) {
-    stop(paste0('The variable ', variable, ' could not be found in the temporal data.'))
+  if (!is.null(variables)) {
+    for (variable in variables) {
+      if (!variable %in% wiz_frame$temporal_data_dict$variable) {
+        stop(paste0('The variable ', variable, ' could not be found in the temporal data.'))
+      }
+    }
   }
 
   if (!is.null(category) && !any(grepl(category, wiz_frame$temporal_data[[wiz_frame$temporal_category]]))) {
     stop(paste0('The category ', category, ' could not be found in the temporal data.'))
   }
 
-  wiz_variable = variable
+  wiz_variables = variables
   wiz_category = category
 
   if (!is.null(wiz_frame$step_units)) {
@@ -137,10 +137,6 @@ wiz_add_predictors = function(wiz_frame = NULL,
   if (lookback_converted %% window_converted != 0) {
     stop ('The lookback must be divisible by the window (with no remainder).')
   }
-
-  # Convert value column to numeric
-  wiz_frame$temporal_data[[wiz_frame$temporal_value]] =
-    as.numeric(wiz_frame$temporal_data[[wiz_frame$temporal_value]])
 
   temporal_data_of_interest =
     wiz_frame$temporal_data %>%
@@ -179,10 +175,10 @@ wiz_add_predictors = function(wiz_frame = NULL,
       dplyr::select(!!rlang::parse_expr(wiz_frame$temporal_id), wiz_step_time)
   }
 
-  if (!is.null(variable)) {
+  if (!is.null(variables)) {
     temporal_data_of_interest =
       temporal_data_of_interest %>%
-      dplyr::filter(!!rlang::parse_expr(wiz_frame$temporal_variable) %in% wiz_variable)
+      dplyr::filter(!!rlang::parse_expr(wiz_frame$temporal_variable) %in% wiz_variables)
   } else if (!is.null(category)) {
     temporal_data_of_interest =
       temporal_data_of_interest %>%
@@ -191,10 +187,42 @@ wiz_add_predictors = function(wiz_frame = NULL,
     stop('This option should not be possible.')
   }
 
-  if (!is.null(variable)) {
-    message(paste0('Processing variable ', paste0(variable, collapse = ', '), '...'))
+  if ('character' %in% (wiz_frame$temporal_data_dict %>%
+                        dplyr::filter(variable %in% temporal_data_of_interest[[wiz_frame$temporal_variable]]) %>%
+                        dplyr::pull(class)) &&
+      'numeric' %in% (wiz_frame$temporal_data_dict %>%
+                      dplyr::filter(variable %in% temporal_data_of_interest[[wiz_frame$temporal_variable]]) %>%
+                      dplyr::pull(class))) {
+        stop(paste0('Please select variables that are either all numeric or all categorical. ',
+                'They cannot be mixed. If both are to be selected, then you must dummy ',
+                'code the categorical variables using wiz_dummy_code().'))
+  }
+
+  # If all variables are numeric, convert value column to numeric prior to calculating stats
+  if (all(wiz_frame$temporal_data_dict %>%
+           dplyr::filter(variable %in% temporal_data_of_interest[[wiz_frame$temporal_variable]]) %>%
+          dplyr::pull(class) == 'numeric')) {
+    temporal_data_of_interest[[wiz_frame$temporal_value]] =
+      as.numeric(temporal_data_of_interest[[wiz_frame$temporal_value]])
+  } else {
+    temporal_data_of_interest[[wiz_frame$temporal_value]] =
+      as.character(temporal_data_of_interest[[wiz_frame$temporal_value]])
+  }
+
+  # Test to make sure all stats are calculable
+  for (stat in stats) {
+    tryCatch({
+      do.call(stat, list(temporal_data_of_interest[[wiz_frame$temporal_value]]))},
+      error = function (e) {
+        stop(paste0('The statistic ', stat, ' could not be calculated for the ',
+                    'selected variables in the temporal data.'))
+      })
+  }
+
+  if (!is.null(variables)) {
+    message(paste0('Processing variables: ', paste0(variables, collapse = ', '), '...'))
   } else if (!is.null(category)) {
-    message(paste0('Processing category ', category, '...'))
+    message(paste0('Processing category: ', category, '...'))
   }
 
   intermediate_output_rows = max_step_times_per_id %>%
@@ -214,6 +242,10 @@ wiz_add_predictors = function(wiz_frame = NULL,
     {sum(.)}
 
   message(paste0('Anticipated number of rows in final output: ', final_output_rows))
+
+  if (check_size_only) {
+    return(intermediate_output_rows)
+  }
 
   message('Allocating memory...')
 
@@ -254,7 +286,7 @@ wiz_add_predictors = function(wiz_frame = NULL,
     dplyr::group_by(!!rlang::parse_expr(wiz_frame$temporal_id),
                     time,
                     window_time) %>%
-    dplyr::group_split(.keep = TRUE)
+    dplyr::group_split()
 
   suppressWarnings({
     output_frame =
@@ -262,26 +294,27 @@ wiz_add_predictors = function(wiz_frame = NULL,
       furrr::future_map_dfr(.f = function(groups = .x,
                                           temporal_id = wiz_frame$temporal_id,
                                           temporal_variable = wiz_frame$temporal_variable,
-                                          temporal_value = wiz_frame$temporal_value) {
+                                          temporal_value = wiz_frame$temporal_value,
+                                          temporal_time = wiz_frame$temporal_time) {
         if (lookback_converted < 0) { # E.g. if it is a lookahead
           output_item =
             temporal_data_of_interest %>%
             dplyr::filter(!!rlang::parse_expr(temporal_id) == groups[[temporal_id]][1] &
-                            wiz_step_time > groups$time - groups$window_time + window_converted & # outcome cannot include right now
-                            wiz_step_time <= groups$time - groups$window_time)
+                            !!rlang::parse_expr(temporal_time) > groups$time[1] - groups$window_time[1] + window_converted & # outcome cannot include right now
+                            !!rlang::parse_expr(temporal_time) <= groups$time[1] - groups$window_time[1])
         } else { # if it is a lookback
           output_item =
             temporal_data_of_interest %>%
             dplyr::filter(!!rlang::parse_expr(temporal_id) == groups[[temporal_id]][1] &
-                            wiz_step_time <= groups$time - groups$window_time + window_converted & # includes now in predictors
-                            wiz_step_time > groups$time - groups$window_time) # up to X hours ago but not including X
+                            !!rlang::parse_expr(temporal_time) <= groups$time[1] - groups$window_time[1] + window_converted & # includes now in predictors
+                            !!rlang::parse_expr(temporal_time) > groups$time[1] - groups$window_time[1]) # up to X hours ago but not including X
         }
 
         output_item =
           output_item %>%
           # dplyr::filter(!!rlang::parse_expr(temporal_variable) == groups[[temporal_variable]]) %>%
           dplyr::group_by(!!rlang::parse_expr(temporal_variable)) %>%
-          dplyr::arrange(!!rlang::parse_expr(temporal_variable), wiz_step_time) %>%
+          dplyr::arrange(!!rlang::parse_expr(temporal_variable), !!rlang::parse_expr(temporal_time)) %>%
           dplyr::summarize_at(temporal_value,
             .funs = stats) %>%
           tidyr::gather(wiz_stat, wiz_value, -!!rlang::parse_expr(temporal_variable)) %>%
@@ -290,7 +323,6 @@ wiz_add_predictors = function(wiz_frame = NULL,
                         window_time = groups$window_time[1]) %>%
           dplyr::select(!!rlang::parse_expr(temporal_id), time, window_time,
                         !!rlang::parse_expr(temporal_variable), dplyr::everything())
-
 
 
         if (nrow(output_item) == 0) {
@@ -305,7 +337,7 @@ wiz_add_predictors = function(wiz_frame = NULL,
                           window_time = groups$window_time[1]) %>%
             dplyr::select(!!rlang::parse_expr(temporal_id), time, window_time,
                           !!rlang::parse_expr(temporal_variable), dplyr::everything()) %>%
-            dplyr::mutate(wiz_value = NA_real_)
+            dplyr::mutate(wiz_value = NA)
         }
         if (strategy == 'sequential') {
           pb$tick()
@@ -329,7 +361,7 @@ wiz_add_predictors = function(wiz_frame = NULL,
                 paste0('.csv'))
   } else {
     file.path(wiz_frame$output_folder,
-              paste0('temporal',  file_type, '_variable_', paste0(variable, collapse = '_'),
+              paste0('temporal',  file_type, '_variables_', paste0(variables, collapse = '_'),
                      '_', lubridate::now()) %>%
                 janitor::make_clean_names() %>%
                 paste0('.csv'))
@@ -340,16 +372,15 @@ wiz_add_predictors = function(wiz_frame = NULL,
     dplyr::mutate(wiz_variable =
                     paste0(!!rlang::parse_expr(wiz_frame$temporal_variable),
                            '_', wiz_stat),
-                  wiz_value = as.numeric(wiz_value)) %>%
+                  wiz_value = wiz_value) %>% # removed as.numeric(wiz_value)
     dplyr::select(-!!rlang::parse_expr(wiz_frame$temporal_variable), -wiz_stat) %>%
-    # tidyr::gather(variable, value, -!!rlang::parse_expr(wiz_frame$temporal_id),
+    # tidyr::gather(variables, value, -!!rlang::parse_expr(wiz_frame$temporal_id),
     #               -wiz_variable, -time, -window_time) %>%
-    # # dplyr::filter(stringr::str_detect(variable,
+    # # dplyr::filter(stringr::str_detect(variables,
     # #                                  paste0('^', wiz_variable, '_.*?_.*?_[0-9.]+$'))) %>%
     # dplyr::select(-wiz_variable) %>%
     dplyr::mutate(wiz_value = dplyr::na_if(wiz_value, -Inf)) %>%
-    dplyr::mutate(wiz_value = dplyr::na_if(wiz_value, Inf)) %>%
-    {.[is.na(.)] = NA_real_; .}
+    dplyr::mutate(wiz_value = dplyr::na_if(wiz_value, Inf))
 
 
   if (lookback_converted < 0) { # e.g. if it is a lookahead
@@ -441,7 +472,7 @@ wiz_calc_stats_furrr = function(groups, temporal_id, temporal_variable, temporal
                     window_time = groups$window_time) %>%
       dplyr::select(!!rlang::parse_expr(temporal_id), time, window_time,
                     !!rlang::parse_expr(temporal_variable), dplyr::everything()) %>%
-      dplyr::mutate(wiz_value = NA_real_)
+      dplyr::mutate(wiz_value = NA)
   }
 
   # pb$tick()

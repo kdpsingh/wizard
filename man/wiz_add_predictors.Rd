@@ -7,13 +7,14 @@
 \usage{
 wiz_add_predictors(
   wiz_frame = NULL,
-  variable = NULL,
+  variables = NULL,
   category = NULL,
   lookback = hours(48),
   window = lookback,
   stats = c(mean = mean, min = min, max = max),
   impute = TRUE,
-  output_file = TRUE
+  output_file = TRUE,
+  check_size_only = FALSE
 )
 }
 \description{
