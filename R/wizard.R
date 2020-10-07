@@ -12,10 +12,16 @@ wiz_frame = function(fixed_data,
                      temporal_category = temporal_variable,
                      step = NULL,
                      output_folder = NULL,
+                     create_folder = FALSE,
+                     save_wiz_frame = FALSE,
                      numeric_threshold = 0.5) {
 
   assertthat::assert_that('data.frame' %in% class(fixed_data))
   assertthat::assert_that('data.frame' %in% class(temporal_data))
+
+  # To deal with any data.table -> dtplyr weirdness
+  fixed_data = as.data.frame(fixed_data)
+  temporal_data = as.data.frame(temporal_data)
 
   if (!is.null(fixed_start)) {
     if (class(fixed_data[[fixed_start]])[1] %in% c('Date', 'POSIXct', 'POSIXt') &&
@@ -24,6 +30,12 @@ wiz_frame = function(fixed_data,
     }
     if (is.numeric(fixed_data[[fixed_start]]) && !is.numeric(step)) {
       stop('Both the fixed_start column in the fixed_data and step must be in the same units.')
+    }
+    if (class(fixed_data[[fixed_start]])[1] %in% c('character', 'factor')) {
+      stop('The fixed_start column cannot be a character or factor column. You must convert it to either a number or a date.')
+    }
+    if (any(is.na(fixed_data[[fixed_start]]))) {
+      stop('The fixed_start column cannot contain missing values.')
     }
   }
 
@@ -35,6 +47,12 @@ wiz_frame = function(fixed_data,
     if (is.numeric(fixed_data[[fixed_end]]) & !is.numeric(step)) {
       stop('Both the fixed_end column in the fixed_data and step must be in the same units.')
     }
+    if (class(fixed_data[[fixed_end]])[1] %in% c('character', 'factor')) {
+      stop('The fixed_end column cannot be a character or factor column. You must convert it to either a number or a date.')
+    }
+    if (any(is.na(fixed_data[[fixed_end]]))) {
+      stop('The fixed_end column cannot contain missing values.')
+    }
   }
 
   if (class(temporal_data[[temporal_time]])[1] %in% c('Date', 'POSIXct', 'POSIXt') &&
@@ -44,6 +62,12 @@ wiz_frame = function(fixed_data,
   if (is.numeric(temporal_data[[temporal_time]]) && !is.numeric(step)) {
     stop('Both the temporal_time column in the temporal_data and step must be in the same units.')
   }
+  if (class(temporal_data[[temporal_time]])[1] %in% c('character', 'factor')) {
+    stop('The temporal_time column cannot be a character or factor column. You must convert it to either a number or a date.')
+  }
+  if (any(is.na(temporal_data[[temporal_time]]))) {
+    stop('The temporal_time column cannot contain missing values.')
+  }
 
 
   if (is.null(output_folder)) {
@@ -51,11 +75,29 @@ wiz_frame = function(fixed_data,
   }
 
   if (!dir.exists(output_folder)) {
-    if (tolower(readline('This folder does not exist. Would you like it to be created (y/n)? ')) %in% c('y', 'yes')) {
+    if (create_folder) {
+      dir.create(output_folder)
+    } else if (tolower(readline('This folder does not exist. Would you like it to be created (y/n)? ')) %in% c('y', 'yes')) {
       dir.create(output_folder)
     } else {
       stop(paste0('The output folder ', output_folder, ' could not be created.'))
     }
+  }
+
+  # check to make sure no one has missing time in temporal_data
+  if (any(is.na(temporal_data[[temporal_time]]))) {
+    stop('You cannot have any missing time stamps in the temporal_time column.')
+  }
+
+  # check to make sure all patients in temporal_data
+  # are accounted for in the fixed_data
+  if (length(setdiff(temporal_data[[temporal_id]], fixed_data[[fixed_id]])) > 0) {
+    stop('All ids in the temporal_data must also be present in the fixed_data.')
+  }
+
+  # check for duplicate patients in fixed_data
+  if (length(unique(fixed_data[[fixed_id]])) < length(fixed_data[[fixed_id]])) {
+    stop('You cannot have multiple rows for with the same id in the fixed_data.')
   }
 
   # Change step to numeric and set step_units
@@ -179,11 +221,9 @@ wiz_frame = function(fixed_data,
       temporal_data_dict = temporal_data_dict),
       class = 'wiz_frame')
 
-  # suppressWarnings({
-  #   wiz_frame =
-  #    wiz_frame %>%
-  #    wiz_categorical_to_numeric()
-  #})
+  if (save_wiz_frame) {
+    saveRDS(wiz_frame, file.path(output_folder, 'wiz_frame.rds'))
+  }
 
   return(wiz_frame)
 }
@@ -269,7 +309,8 @@ wiz_build_temporal_data_dictionary = function (temporal_data,
 #' @export
 wiz_dummy_code = function(wiz_frame = NULL,
                           numeric_threshold = 0.5,
-                          variables = NULL) {
+                          variables = NULL,
+                          save_wiz_frame = FALSE) {
 
   if (is.null(variables)) { # if you do NOT supply a vector of variables (the default)
 
@@ -320,6 +361,11 @@ wiz_dummy_code = function(wiz_frame = NULL,
                                        wiz_frame$temporal_variable,
                                        wiz_frame$temporal_value,
                                        numeric_threshold)})
+
+  if (save_wiz_frame) {
+    saveRDS(wiz_frame, file.path(wiz_frame$output_folder, 'wiz_frame.rds'))
+  }
+
   wiz_frame
 }
 

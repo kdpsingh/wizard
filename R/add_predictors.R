@@ -1,11 +1,17 @@
 #' New internal helper function
 wiz_define_steps = function(groups, temporal_id, step, max_step_times_per_id,
-                            lookback_converted, window_converted) {
+                            lookback_converted, window_converted, output_folder,
+                            log_file) {
 
   # check to make sure no one has missing time in temporal_data
   # check to make sure all patients in temporal_data
   # are accounted for in the fixed_data
   # make sure no missing values in fixed_start or fixed_end
+
+  if (log_file) {
+    write(paste0(Sys.time(), ': id: ', groups[[temporal_id]]),
+          file.path(output_folder, 'wiz_log.txt'), append = TRUE)
+  }
 
     max_step_time =
     max_step_times_per_id %>%
@@ -88,7 +94,11 @@ wiz_add_predictors = function(wiz_frame = NULL,
                                         max = max),
                               impute = TRUE,
                               output_file = TRUE,
-                              check_size_only = FALSE) {
+                              log_file = FALSE,
+                              check_size_only = FALSE,
+                              ...) {
+
+  dots = list(...)
 
   if (is.null(variables) && is.null(category)) {
     stop('You must specify either a variable or a category.')
@@ -221,8 +231,16 @@ wiz_add_predictors = function(wiz_frame = NULL,
 
   if (!is.null(variables)) {
     message(paste0('Processing variables: ', paste0(variables, collapse = ', '), '...'))
+    if (log_file) {
+      write(paste0(Sys.time(), ': Processing variables: ', paste0(variables, collapse = ', '), '...'),
+            file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
+    }
   } else if (!is.null(category)) {
     message(paste0('Processing category: ', category, '...'))
+    if (log_file) {
+      write(paste0(Sys.time(), ': Processing category: ', category, '...'),
+            file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
+    }
   }
 
   intermediate_output_rows = max_step_times_per_id %>%
@@ -234,6 +252,10 @@ wiz_add_predictors = function(wiz_frame = NULL,
   # {. * length(unique(temporal_data_of_interest[[wiz_frame$temporal_variable]]))} # num variables
 
   message(paste0('Anticipated number of rows in intermediate output: ', intermediate_output_rows))
+  if (log_file) {
+    write(paste0(Sys.time(), ': Anticipated number of rows in intermediate output: ', intermediate_output_rows),
+          file.path(wiz_frame$output_folder, 'wiz_log.txt'), append=TRUE)
+  }
 
   final_output_rows = max_step_times_per_id %>%
     dplyr::filter(wiz_step_time >= 0) %>%
@@ -242,12 +264,20 @@ wiz_add_predictors = function(wiz_frame = NULL,
     {sum(.)}
 
   message(paste0('Anticipated number of rows in final output: ', final_output_rows))
+  if (log_file) {
+    write(paste0(Sys.time(), ': Anticipated number of rows in final output: ', final_output_rows),
+          file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
+  }
 
   if (check_size_only) {
     return(intermediate_output_rows)
   }
 
   message('Allocating memory...')
+  if (log_file) {
+    write(paste0(Sys.time(), ': Allocating memory...'),
+          file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
+  }
 
   output_frame =
     dplyr::tibble(!!rlang::parse_expr(wiz_frame$temporal_id) :=
@@ -263,13 +293,19 @@ wiz_add_predictors = function(wiz_frame = NULL,
                                          step = wiz_frame$step,
                                          max_step_times_per_id = max_step_times_per_id,
                                          lookback_converted = lookback_converted,
-                                         window_converted = window_converted))
+                                         window_converted = window_converted,
+                                         output_folder = wiz_frame$output_folder,
+                                         log_file = log_file))
 
   total_num_groups = nrow(output_frame)
 
   if ('sequential' %in% class(future::plan())) {
     strategy = 'sequential'
     message('Parallel processing is DISABLED. Calculations are happening sequentially.')
+    if (log_file) {
+      write(paste0(Sys.time(), ': Parallel processing is DISABLED. Calculations are happening sequentially.'),
+            file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
+    }
     pb = progress::progress_bar$new(format = "[:bar] :current/:total (:percent) Time remaining: :eta",
                                     total = intermediate_output_rows)
 
@@ -277,9 +313,17 @@ wiz_add_predictors = function(wiz_frame = NULL,
   } else {
     strategy = 'parallel'
     message('Parallel processing is ENABLED.')
+    if (log_file) {
+      write(paste0(Sys.time(), ': Parallel processing is ENABLED.'),
+            file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
+    }
   }
 
   message('Beginning calculation...')
+  if (log_file) {
+    write(paste0(Sys.time(), ': Beginning calculation...'),
+          file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
+  }
 
   output_list =
     output_frame %>%
@@ -296,6 +340,7 @@ wiz_add_predictors = function(wiz_frame = NULL,
                                           temporal_variable = wiz_frame$temporal_variable,
                                           temporal_value = wiz_frame$temporal_value,
                                           temporal_time = wiz_frame$temporal_time) {
+
         if (lookback_converted < 0) { # E.g. if it is a lookahead
           output_item =
             temporal_data_of_interest %>%
@@ -348,6 +393,12 @@ wiz_add_predictors = function(wiz_frame = NULL,
     # dplyr::ungroup()
   })
 
+  message('Completed calculation.')
+  if (log_file) {
+    write(paste0(Sys.time(), ': Completed calculation.'),
+          file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
+  }
+
   if (lookback_converted < 0) {
     file_type = '_outcomes_'
   } else {
@@ -391,15 +442,31 @@ wiz_add_predictors = function(wiz_frame = NULL,
                                                        nchar(abs(lookback_converted)), pad = '0'))) %>%
       dplyr::select(-window_time)
   } else { # if it is a lookback
+
+    if (is.null(dots[['baseline']]) || !dots[['baseline']]) {
     output_frame =
       output_frame %>%
       dplyr::mutate(wiz_variable = paste0(wiz_variable, '_',
                                       stringr::str_pad(abs(window_time),
                                                        nchar(abs(lookback_converted)), pad = '0'))) %>%
       dplyr::select(-window_time)
+    } else {
+      output_frame =
+        output_frame %>%
+        dplyr::mutate(wiz_variable = paste0('baseline_', wiz_variable, '_',
+                                            stringr::str_pad(abs(window_time),
+                                                             nchar(abs(lookback_converted)), pad = '0'))) %>%
+        dplyr::select(-window_time)
+    }
   }
 
   if (impute) {
+    message('Performing LOCF imputation...')
+    if (log_file) {
+      write(paste0(Sys.time(), ': Performing LOCF imputation...'),
+            file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
+    }
+
     output_frame =
       output_frame %>%
       dplyr::group_by(!!rlang::parse_expr(wiz_frame$temporal_id), wiz_variable) %>% # Do not group by time because values need to fill across different times
@@ -413,6 +480,12 @@ wiz_add_predictors = function(wiz_frame = NULL,
     tidyr::spread(wiz_variable, wiz_value) %>%
     as.data.frame()
 
+  message('Completed data cleanup.')
+  if (log_file) {
+    write(paste0(Sys.time(), ': Completed data cleanup.'),
+          file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
+  }
+
   if (output_file == TRUE) {
     data.table::fwrite(output_frame, output_file_name)
     message(paste0('The output file was written to: ', output_file_name))
@@ -421,6 +494,44 @@ wiz_add_predictors = function(wiz_frame = NULL,
 
   return(output_frame)
 }
+
+#' Function to add baseline predictors
+#' Offset of hours(1) would mean that everything would be anchored to 1 hour
+#' before fixed_start.
+#' @export
+wiz_add_baseline_predictors = function(wiz_frame = NULL,
+                                       variables = NULL,
+                                       category = NULL,
+                                       offset = 0,
+                                       lookback = hours(48),
+                                       window = lookback,
+                                       stats = c(mean = mean,
+                                                 min = min,
+                                                 max = max),
+                                       impute = TRUE,
+                                       output_file = TRUE,
+                                       log_file = FALSE,
+                                       check_size_only = FALSE) {
+
+  wiz_frame$fixed_end = wiz_frame$fixed_start
+
+  wiz_frame$fixed_data[[wiz_frame$fixed_start]] = wiz_frame$fixed_data[[wiz_frame$fixed_start]] - offset
+
+  wiz_add_predictors(wiz_frame = wiz_frame,
+                     variables = variables,
+                     category = category,
+                     lookback = lookback,
+                     window = window,
+                     stats = stats,
+                     impute = impute,
+                     output_file = output_file,
+                     log_file = log_file,
+                     check_size_only = check_size_only,
+                     baseline = TRUE)
+
+}
+
+
 
 
 #' Internal function

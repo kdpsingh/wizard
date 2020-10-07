@@ -10,7 +10,9 @@ wiz_define_steps(
   step,
   max_step_times_per_id,
   lookback_converted,
-  window_converted
+  window_converted,
+  output_folder,
+  log_file
 )
 }
 \description{

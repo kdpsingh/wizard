@@ -58,7 +58,9 @@ wf = wiz_frame(fixed_data = sample_fixed_data,
                temporal_category = 'category',
                temporal_value = 'value',
                step = hours(6),
-               output_folder = file.path(tempdir(), 'wizard_dir'))
+               output_folder = file.path(tempdir(), 'wizard_dir'),
+               save_wiz_frame = TRUE)
+
 ```
 
 ## Let's look at the automatically generated data dictionaries
@@ -80,7 +82,7 @@ wf$temporal_data_dict
 
 ```{r}
 wf = wf %>% 
-  wiz_dummy_code()
+  wiz_dummy_code(save_wiz_frame = TRUE)
 ```
 
 
@@ -107,9 +109,11 @@ wf %>%
                                min = min,
                                max = max,
                                median = median,
-                               length = length)) %>% 
-  wiz_add_predictors(category = 'med', # Note: category is always a regular expression 
+                               length = length),
+                     log_file = TRUE) %>% 
+  wiz_add_baseline_predictors(category = 'med', # Note: category is always a regular expression 
                      lookback = days(7),
+                     offset = days(1),
                      stats = c(sum = sum,
                                any = any),
                      impute = FALSE) %>% # Note: do *not* perform carry-forward imputation 
@@ -125,7 +129,7 @@ You can either provide `wiz_combine()` with a set of data frames or files separa
 This resulting frame is essentially ready for modeling (using `tidymodels`, for example). Make sure to keep individual patients in the same fold if you divide this dataset into multiple folds.
 
 ```{r}
-model_data = wiz_combine(wf, files = dir(file.path(tempdir(), 'wizard_dir')))
+model_data = wiz_combine(wf, files = dir(file.path(tempdir(), 'wizard_dir'), pattern = '*.csv'))
 
 head(model_data)
 ```
@@ -155,7 +159,7 @@ wf %>%
 wf %>% 
   wiz_add_predictors(variables = c('cr', 'med_aspirin'),
                      lookback = weeks(1), 
-                     stats = c(any = any),
+                     stats = c(length = length),
                      output_file = FALSE) %>% 
   head()
 ```
@@ -166,7 +170,7 @@ wf %>%
 wf %>% 
   wiz_add_predictors(category = 'lab|med',
                      lookback = hours(12), 
-                     stats = c(any = any),
+                     stats = c(length = length),
                      output_file = FALSE) %>% 
   head()
 ```

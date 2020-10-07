@@ -17,6 +17,8 @@ wiz_frame(
   temporal_category = temporal_variable,
   step = NULL,
   output_folder = NULL,
+  create_folder = FALSE,
+  save_wiz_frame = FALSE,
   numeric_threshold = 0.5
 )
 }

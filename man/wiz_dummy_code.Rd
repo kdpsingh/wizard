@@ -4,7 +4,12 @@
 \alias{wiz_dummy_code}
 \title{Function that converts categorical temporal predictors into dummy variables}
 \usage{
-wiz_dummy_code(wiz_frame = NULL, numeric_threshold = 0.5, variables = NULL)
+wiz_dummy_code(
+  wiz_frame = NULL,
+  numeric_threshold = 0.5,
+  variables = NULL,
+  save_wiz_frame = FALSE
+)
 }
 \description{
 Note that you can you can use this to dummy code variables with numerical values
