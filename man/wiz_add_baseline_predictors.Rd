@@ -10,7 +10,7 @@ wiz_add_baseline_predictors(
   wiz_frame = NULL,
   variables = NULL,
   category = NULL,
-  offset = 0,
+  offset = hours(0),
   lookback = hours(48),
   window = lookback,
   stats = c(mean = mean, min = min, max = max),

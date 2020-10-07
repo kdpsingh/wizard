@@ -186,9 +186,9 @@ wf %>%
 ```{r message=FALSE}
 benchmark_results = list()
 
-future::plan('multiprocess')
+future::plan('multisession')
 
-benchmark_results[['multiprocess']] = 
+benchmark_results[['multisession']] = 
   microbenchmark::microbenchmark(
     wf %>% 
       wiz_add_predictors(variable = 'cr',
@@ -231,4 +231,3 @@ benchmark_results[['sequential']] =
 ```{r}
 benchmark_results
 ```
-

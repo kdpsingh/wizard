@@ -286,8 +286,8 @@ wiz_add_predictors = function(wiz_frame = NULL,
       dplyr::tibble(
         !!rlang::parse_expr(wiz_frame$temporal_variable) :=
           unique(temporal_data_of_interest[[wiz_frame$temporal_variable]]))) %>%
-    dplyr::group_by(!!rlang::parse_expr(wiz_frame$temporal_id),
-                    !!rlang::parse_expr(wiz_frame$temporal_variable)) %>%
+    dplyr::group_by(!!rlang::parse_expr(wiz_frame$temporal_id)) %>%
+                  #  !!rlang::parse_expr(wiz_frame$temporal_variable)) %>%
     dplyr::group_modify(~wiz_define_steps(groups = .y,
                                          temporal_id = wiz_frame$temporal_id,
                                          step = wiz_frame$step,
