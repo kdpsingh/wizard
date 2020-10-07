@@ -156,6 +156,11 @@ wiz_frame = function(fixed_data,
     })
   }
 
+  # check to make sure fixed_start is never greater than fixed_end
+  if (any(fixed_data[[fixed_start]] > fixed_data[[fixed_end]])) {
+    stop('fixed_start should never be greater than fixed_end.')
+  }
+
   suppressMessages({
     temporal_data =
       temporal_data %>%

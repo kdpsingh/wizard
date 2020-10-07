@@ -142,8 +142,12 @@ wf %>%
                                max = max,
                                median = median,
                                length = length),
-                     log_file = TRUE) %>% 
-  wiz_add_baseline_predictors(category = 'med', # Note: category is always a regular expression 
+                     log_file = TRUE) %>%
+  wiz_add_baseline_predictors(variables = 'cr', # add baseline creatinine
+                     lookback = days(90),
+                     offset = hours(10),
+                     stats = c(min = min)) %>%
+  wiz_add_predictors(category = 'med', # Note: category is always a regular expression 
                      lookback = days(7),
                      offset = days(1),
                      stats = c(sum = sum,
@@ -163,7 +167,18 @@ wf %>%
 #> Completed calculation.
 #> Performing LOCF imputation...
 #> Completed data cleanup.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpQVphPi/wizard_dir/temporal_predictors_variables_cr_2020_10_07_00_28_00.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpQVphPi/wizard_dir/temporal_predictors_variables_cr_2020_10_07_01_30_14.csv
+#> Joining, by = "id"
+#> Processing variables: cr...
+#> Anticipated number of rows in intermediate output: 10
+#> Anticipated number of rows in final output: 10
+#> Allocating memory...
+#> Parallel processing is ENABLED.
+#> Beginning calculation...
+#> Completed calculation.
+#> Performing LOCF imputation...
+#> Completed data cleanup.
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpQVphPi/wizard_dir/temporal_predictors_variables_cr_2020_10_07_01_30_15.csv
 #> Joining, by = "id"
 #> Warning in .Primitive("any")(c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, : coercing argument of type
 #> 'double' to logical
@@ -175,7 +190,7 @@ wf %>%
 #> Beginning calculation...
 #> Completed calculation.
 #> Completed data cleanup.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpQVphPi/wizard_dir/temporal_predictors_category_med_2020_10_07_00_28_01.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpQVphPi/wizard_dir/temporal_predictors_category_med_2020_10_07_01_30_15.csv
 #> Joining, by = "id"
 #> Processing variables: cr...
 #> Anticipated number of rows in intermediate output: 10
@@ -185,7 +200,7 @@ wf %>%
 #> Beginning calculation...
 #> Completed calculation.
 #> Completed data cleanup.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpQVphPi/wizard_dir/temporal_outcomes_variables_cr_2020_10_07_00_28_02.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpQVphPi/wizard_dir/temporal_outcomes_variables_cr_2020_10_07_01_30_16.csv
 ```
 
 ## Let’s combine our output into a single data frame
@@ -204,43 +219,37 @@ model_data = wiz_combine(wf, files = dir(file.path(tempdir(), 'wizard_dir'), pat
 #> Joining, by = "id"
 #> Joining, by = c("id", "time")
 #> Joining, by = c("id", "time")
+#> Joining, by = c("id", "time")
 
 head(model_data)
 #>   id    sex      age  race baseline_cr          admit_time             dc_time time outcome_cr_max_24
 #> 1  1   male 66.15955 asian   1.0011752 2019-06-02 00:49:23 2019-06-08 10:38:23    0          1.217020
 #> 2  2 female 60.54697 white   0.7166654 2019-06-07 14:12:21 2019-06-13 18:31:21    0          0.821473
-#> 3  3   male 47.25137 white   0.9207885 2019-08-29 12:47:56 2019-08-30 23:56:56    0          1.187571
-#> 4  4   male 65.16939 black   1.1288818 2019-03-13 21:24:14 2019-03-15 23:39:14    0          1.377588
+#> 3  3   male 47.25137 white   0.9207885 2019-08-29 12:47:56 2019-08-30 23:56:56    0          1.145234
+#> 4  4   male 65.16939 black   1.1288818 2019-03-13 21:24:14 2019-03-15 23:39:14    0          1.312333
 #> 5  5 female 79.87402 other   0.9292875 2019-02-11 02:46:16 2019-02-15 01:35:16    0          1.051864
-#> 6  6   male 88.90951 asian   1.0568886 2019-09-15 20:38:50 2019-09-17 03:58:50    0          1.234542
-#>   baseline_med_acetaminophen_any_168 baseline_med_acetaminophen_sum_168 baseline_med_aspirin_any_168
-#> 1                                 NA                                 NA                           NA
-#> 2                                 NA                                 NA                           NA
-#> 3                                 NA                                 NA                           NA
-#> 4                                 NA                                 NA                           NA
-#> 5                                 NA                                 NA                           NA
-#> 6                                 NA                                 NA                           NA
-#>   baseline_med_aspirin_sum_168 baseline_med_diphenhydramine_any_168
-#> 1                           NA                                   NA
-#> 2                           NA                                   NA
-#> 3                           NA                                   NA
-#> 4                           NA                                   NA
-#> 5                           NA                                   NA
-#> 6                           NA                                   NA
-#>   baseline_med_diphenhydramine_sum_168 cr_length_06 cr_length_12 cr_max_06 cr_max_12 cr_mean_06
-#> 1                                   NA            1            1 1.0036587 1.0300977  1.0036587
-#> 2                                   NA            1           NA 0.6381981        NA  0.6381981
-#> 3                                   NA            1           NA 0.9695346        NA  0.9695346
-#> 4                                   NA            3            1 1.3123332 1.0119205  1.2982510
-#> 5                                   NA           NA            1        NA 0.9786329         NA
-#> 6                                   NA            2           NA 1.3578598        NA  1.3380433
-#>   cr_mean_12 cr_median_06 cr_median_12 cr_min_06 cr_min_12
-#> 1  1.0300977    1.0036587    1.0300977 1.0036587 1.0300977
-#> 2         NA    0.6381981           NA 0.6381981        NA
-#> 3         NA    0.9695346           NA 0.9695346        NA
-#> 4  1.0119205    1.3117746    1.0119205 1.2706452 1.0119205
-#> 5  0.9786329           NA    0.9786329        NA 0.9786329
-#> 6         NA    1.3380433           NA 1.3182267        NA
+#> 6  6   male 88.90951 asian   1.0568886 2019-09-15 20:38:50 2019-09-17 03:58:50    0          1.357860
+#>   med_acetaminophen_any_168 med_acetaminophen_sum_168 med_aspirin_any_168 med_aspirin_sum_168
+#> 1                        NA                        NA                  NA                  NA
+#> 2                        NA                        NA                  NA                  NA
+#> 3                        NA                        NA                  NA                  NA
+#> 4                        NA                        NA                  NA                  NA
+#> 5                        NA                        NA                  NA                  NA
+#> 6                        NA                        NA                  NA                  NA
+#>   med_diphenhydramine_any_168 med_diphenhydramine_sum_168 cr_length_06 cr_length_12 cr_max_06
+#> 1                          NA                          NA            1            1 1.0036587
+#> 2                          NA                          NA            1           NA 0.6381981
+#> 3                          NA                          NA            1           NA 0.9695346
+#> 4                          NA                          NA            3            1 1.3123332
+#> 5                          NA                          NA           NA            1        NA
+#> 6                          NA                          NA            2           NA 1.3578598
+#>   cr_max_12 cr_mean_06 cr_mean_12 cr_median_06 cr_median_12 cr_min_06 cr_min_12 baseline_cr_min_2160
+#> 1 1.0300977  1.0036587  1.0300977    1.0036587    1.0300977 1.0036587 1.0300977                   NA
+#> 2        NA  0.6381981         NA    0.6381981           NA 0.6381981        NA                   NA
+#> 3        NA  0.9695346         NA    0.9695346           NA 0.9695346        NA                   NA
+#> 4 1.0119205  1.2982510  1.0119205    1.3117746    1.0119205 1.2706452 1.0119205                   NA
+#> 5 0.9786329         NA  0.9786329           NA    0.9786329        NA 0.9786329            0.9786329
+#> 6        NA  1.3380433         NA    1.3380433           NA 1.3182267        NA                   NA
 ```
 
 ## Testing wiz\_frame without writing output to files
@@ -407,12 +416,12 @@ benchmark_results
 #>                                                                                                                                                                                                    expr
 #>  wf %>% wiz_add_predictors(variable = "cr", lookback = hours(12),      window = hours(6), stats = c(mean = mean, min = min, max = max,          median = median, length = length), output_file = FALSE)
 #>       min       lq     mean   median       uq      max neval
-#>  3.572116 3.572116 3.572116 3.572116 3.572116 3.572116     1
+#>  4.257754 4.257754 4.257754 4.257754 4.257754 4.257754     1
 #> 
 #> $sequential
 #> Unit: seconds
 #>                                                                                                                                                                                                    expr
 #>  wf %>% wiz_add_predictors(variable = "cr", lookback = hours(12),      window = hours(6), stats = c(mean = mean, min = min, max = max,          median = median, length = length), output_file = FALSE)
 #>       min       lq     mean   median       uq      max neval
-#>  9.557121 9.557121 9.557121 9.557121 9.557121 9.557121     1
+#>  9.555469 9.555469 9.555469 9.555469 9.555469 9.555469     1
 ```

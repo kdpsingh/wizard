@@ -502,7 +502,7 @@ wiz_add_predictors = function(wiz_frame = NULL,
 wiz_add_baseline_predictors = function(wiz_frame = NULL,
                                        variables = NULL,
                                        category = NULL,
-                                       offset = 0,
+                                       offset = hours(0),
                                        lookback = hours(48),
                                        window = lookback,
                                        stats = c(mean = mean,
@@ -513,9 +513,16 @@ wiz_add_baseline_predictors = function(wiz_frame = NULL,
                                        log_file = FALSE,
                                        check_size_only = FALSE) {
 
+  wiz_frame = wiz_frame
+
   wiz_frame$fixed_end = wiz_frame$fixed_start
 
-  wiz_frame$fixed_data[[wiz_frame$fixed_start]] = wiz_frame$fixed_data[[wiz_frame$fixed_start]] - offset
+  if (!is.null(wiz_frame$step_units)) {
+   wiz_frame$temporal_data[[wiz_frame$temporal_time]] =
+     wiz_frame$temporal_data[[wiz_frame$temporal_time]] + lubridate::time_length(offset, unit = wiz_frame$step_units)
+  } else {
+    wiz_frame$temporal_data[[wiz_frame$temporal_time]] = wiz_frame$fixed_data[[wiz_frame$temporal_time]] + offset
+  }
 
   wiz_add_predictors(wiz_frame = wiz_frame,
                      variables = variables,

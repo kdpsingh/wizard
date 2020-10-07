@@ -110,8 +110,12 @@ wf %>%
                                max = max,
                                median = median,
                                length = length),
-                     log_file = TRUE) %>% 
-  wiz_add_baseline_predictors(category = 'med', # Note: category is always a regular expression 
+                     log_file = TRUE) %>%
+  wiz_add_baseline_predictors(variables = 'cr', # add baseline creatinine
+                     lookback = days(90),
+                     offset = hours(10),
+                     stats = c(min = min)) %>%
+  wiz_add_predictors(category = 'med', # Note: category is always a regular expression 
                      lookback = days(7),
                      offset = days(1),
                      stats = c(sum = sum,
