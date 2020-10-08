@@ -16,3 +16,8 @@
 * Added `save_wiz_frame` argument to `wiz_frame()` and `wiz_dummy_code()`. If set to `TRUE`, this saves the `wiz_frame` object to the specified `output_folder` with the file_name `wiz_frame.rds`. Note that this will overwrite prior versions of the file.
 * Added `log_file` option to `wiz_add_predictors()` and `wiz_add_outcomes()` to create and append to a log file, which is auto-titled `wiz_log.txt` and saved in the `output_folder`.
 * Added `wiz_add_baseline_predictors()` function to add baseline predictors with an option to specify an offset (e.g., up to 1 hour prior to admission)
+
+# wizard 0.0.0.9003 (2020-10-08)
+
+* All windows are now calculated simultaneously for each step, which greatly reduces the number of parallel jobs (and the time and memory taken by the allocating memory step).
+* Removed time column from `wiz_add_baseline_predictors()` so that it is treated as a type of "fixed data", and moved its logic into the `wiz_add_predictors()` function.

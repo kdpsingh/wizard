@@ -111,11 +111,11 @@ wf %>%
                                median = median,
                                length = length),
                      log_file = TRUE) %>%
-  wiz_add_baseline_predictors(variables = 'cr', # add baseline creatinine
+ wiz_add_baseline_predictors(variables = 'cr', # add baseline creatinine
                      lookback = days(90),
                      offset = hours(10),
                      stats = c(min = min)) %>%
-  wiz_add_predictors(category = 'med', # Note: category is always a regular expression 
+ wiz_add_predictors(category = 'med', # Note: category is always a regular expression 
                      lookback = days(7),
                      offset = days(1),
                      stats = c(sum = sum,
@@ -155,6 +155,7 @@ wf %>%
                                length = length),
                      output_file = FALSE) %>% 
   head()
+
 ```
 
 ## You can also supply a vector of variables
@@ -192,7 +193,7 @@ benchmark_results[['multisession']] =
   microbenchmark::microbenchmark(
     wf %>% 
       wiz_add_predictors(variable = 'cr',
-                         lookback = hours(12), 
+                         lookback = hours(48), 
                          window = hours(6), 
                          stats = c(mean = mean,
                                    min = min,
@@ -213,7 +214,7 @@ benchmark_results[['sequential']] =
   microbenchmark::microbenchmark(
   wf %>% 
     wiz_add_predictors(variable = 'cr',
-                       lookback = hours(12), 
+                       lookback = hours(48), 
                        window = hours(6), 
                        stats = c(mean = mean,
                                  min = min,

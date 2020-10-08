@@ -8,10 +8,10 @@ wiz_define_steps = function(groups, temporal_id, step, max_step_times_per_id,
   # are accounted for in the fixed_data
   # make sure no missing values in fixed_start or fixed_end
 
-  if (log_file) {
-    write(paste0(Sys.time(), ': id: ', groups[[temporal_id]]),
-          file.path(output_folder, 'wiz_log.txt'), append = TRUE)
-  }
+  # if (log_file) {
+  #   write(paste0(Sys.time(), ': id: ', groups[[temporal_id]]),
+  #        file.path(output_folder, 'wiz_log.txt'), append = TRUE)
+  # }
 
     max_step_time =
     max_step_times_per_id %>%
@@ -24,62 +24,17 @@ wiz_define_steps = function(groups, temporal_id, step, max_step_times_per_id,
 
   time = seq(0, max_step_time, by = step)
 
-  window_num = 1:(lookback_converted/window_converted)
+  # window_num = 1:(lookback_converted/window_converted)
 
-  window_time = window_num*window_converted
+  # window_time = window_num*window_converted
 
-  return_frame =
-    tidyr::expand_grid(time, window_time)
+  # return_frame =
+  #   tidyr::expand_grid(time, window_time)
+
+  return_frame = data.frame(time = time)
 
   return(return_frame)
 }
-
-#' Internal function
-wiz_calc_stats = function(groups, temporal_id, temporal_variable, temporal_value, stats,
-                          lookback_converted, window_converted, temporal_data_of_interest,
-                          total_num_groups, pb) {
-  if (lookback_converted < 0) { # E.g. if it is a lookahead
-    output_item =
-      temporal_data_of_interest %>%
-      dplyr::filter(!!rlang::parse_expr(temporal_id) == groups[[temporal_id]] &
-                      wiz_step_time > groups$time - groups$window_time + window_converted & # outcome cannot include right now
-                      wiz_step_time <= groups$time - groups$window_time)
-  } else { # if it is a lookback
-    output_item =
-      temporal_data_of_interest %>%
-      dplyr::filter(!!rlang::parse_expr(temporal_id) == groups[[temporal_id]] &
-                      wiz_step_time <= groups$time - groups$window_time + window_converted & # includes now in predictors
-                      wiz_step_time > groups$time - groups$window_time) # up to X hours ago but not including X
-  }
-
-  suppressWarnings({
-
-    output_item =
-      output_item %>%
-      # dplyr::filter(!!rlang::parse_expr(temporal_variable) == groups[[temporal_variable]]) %>%
-      dplyr::group_by(!!rlang::parse_expr(temporal_variable))%>%
-      dplyr::summarize_at(temporal_value,
-        .funs = stats) %>%
-      tidyr::gather(wiz_stat, wiz_value, -!!rlang::parse_expr(temporal_variable)) # %>%
-      # dplyr::rename_all(.funs = . %>% paste0(groups[[temporal_variable]], '_',.))
-
-  })
-
-  if (nrow(output_item) == 0) {
-    output_item =
-      tidyr::crossing(
-        dplyr::tibble(!!rlang::parse_expr(temporal_variable) :=
-                        unique(temporal_data_of_interest[[temporal_variable]])),
-        dplyr::tibble(wiz_stat = names(stats))
-      ) %>%
-      dplyr::mutate(wiz_value = NA)
-  }
-
-  pb$tick()
-  return(output_item)
-}
-
-
 
 #' New furrr-enabled add_predictors function
 #' #' New add_predictors function using group_modify
@@ -97,7 +52,6 @@ wiz_add_predictors = function(wiz_frame = NULL,
                               log_file = FALSE,
                               check_size_only = FALSE,
                               ...) {
-
   dots = list(...)
 
   if (is.null(variables) && is.null(category)) {
@@ -224,8 +178,9 @@ wiz_add_predictors = function(wiz_frame = NULL,
     tryCatch({
       do.call(stat, list(temporal_data_of_interest[[wiz_frame$temporal_value]]))},
       error = function (e) {
-        stop(paste0('The statistic ', stat, ' could not be calculated for the ',
-                    'selected variables in the temporal data.'))
+        stop(paste0('At least one of the statistics could not be calculated for the ',
+                    'selected variables in the temporal data. Did you perhaps forget to ',
+                    'run wiz_dummy_code() on one of the variables of interest?'))
       })
   }
 
@@ -251,11 +206,11 @@ wiz_add_predictors = function(wiz_frame = NULL,
     {. * lookback_converted/window_converted} # Only for intermediate output
   # {. * length(unique(temporal_data_of_interest[[wiz_frame$temporal_variable]]))} # num variables
 
-  message(paste0('Anticipated number of rows in intermediate output: ', intermediate_output_rows))
-  if (log_file) {
-    write(paste0(Sys.time(), ': Anticipated number of rows in intermediate output: ', intermediate_output_rows),
-          file.path(wiz_frame$output_folder, 'wiz_log.txt'), append=TRUE)
-  }
+  # message(paste0('Anticipated number of rows in intermediate output: ', intermediate_output_rows))
+  # if (log_file) {
+  #   write(paste0(Sys.time(), ': Anticipated number of rows in intermediate output: ', intermediate_output_rows),
+  #         file.path(wiz_frame$output_folder, 'wiz_log.txt'), append=TRUE)
+  # }
 
   final_output_rows = max_step_times_per_id %>%
     dplyr::filter(wiz_step_time >= 0) %>%
@@ -297,6 +252,24 @@ wiz_add_predictors = function(wiz_frame = NULL,
                                          output_folder = wiz_frame$output_folder,
                                          log_file = log_file))
 
+
+  if (!is.null(dots[['baseline']]) && dots[['baseline']]) {
+    output_frame =
+      output_frame %>%
+      dplyr::filter(time == 0)
+
+    if (!is.null(wiz_frame$step_units)) {
+      temporal_data_of_interest[[wiz_frame$temporal_time]] =
+        temporal_data_of_interest[[wiz_frame$temporal_time]] +
+        lubridate::time_length(dots[['offset']], unit = wiz_frame$step_units)
+    } else {
+      temporal_data_of_interest[[wiz_frame$temporal_time]] =
+        temporal_data_of_interest[[wiz_frame$temporal_time]] + offset
+    }
+  }
+
+
+
   total_num_groups = nrow(output_frame)
 
   if ('sequential' %in% class(future::plan())) {
@@ -307,7 +280,7 @@ wiz_add_predictors = function(wiz_frame = NULL,
             file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
     }
     pb = progress::progress_bar$new(format = "[:bar] :current/:total (:percent) Time remaining: :eta",
-                                    total = intermediate_output_rows)
+                                    total = final_output_rows) # intermediate_output_rows)
 
     pb$tick(0)
   } else {
@@ -328,8 +301,8 @@ wiz_add_predictors = function(wiz_frame = NULL,
   output_list =
     output_frame %>%
     dplyr::group_by(!!rlang::parse_expr(wiz_frame$temporal_id),
-                    time,
-                    window_time) %>%
+                    time) %>% #,
+#                    window_time) %>%
     dplyr::group_split()
 
   suppressWarnings({
@@ -341,34 +314,60 @@ wiz_add_predictors = function(wiz_frame = NULL,
                                           temporal_value = wiz_frame$temporal_value,
                                           temporal_time = wiz_frame$temporal_time) {
 
+        # window_num = 1:(lookback_converted/window_converted)
+
+        # window_time = window_num*window_converted
+
         if (lookback_converted < 0) { # E.g. if it is a lookahead
           output_item =
             temporal_data_of_interest %>%
             dplyr::filter(!!rlang::parse_expr(temporal_id) == groups[[temporal_id]][1] &
-                            !!rlang::parse_expr(temporal_time) > groups$time[1] - groups$window_time[1] + window_converted & # outcome cannot include right now
-                            !!rlang::parse_expr(temporal_time) <= groups$time[1] - groups$window_time[1])
+                            !!rlang::parse_expr(temporal_time) > groups$time[1] & # outcome cannot include right now
+                            !!rlang::parse_expr(temporal_time) <= groups$time[1] - lookback_converted)
         } else { # if it is a lookback
           output_item =
             temporal_data_of_interest %>%
             dplyr::filter(!!rlang::parse_expr(temporal_id) == groups[[temporal_id]][1] &
-                            !!rlang::parse_expr(temporal_time) <= groups$time[1] - groups$window_time[1] + window_converted & # includes now in predictors
-                            !!rlang::parse_expr(temporal_time) > groups$time[1] - groups$window_time[1]) # up to X hours ago but not including X
+                            !!rlang::parse_expr(temporal_time) <= groups$time[1] & # includes now in predictors
+                            !!rlang::parse_expr(temporal_time) > groups$time[1] - lookback_converted) # up to X hours ago but not including X
         }
+
+        output_item = output_item %>%
+          dplyr::mutate(window_time = ((groups$time[1] - !!rlang::parse_expr(temporal_time)) %/%
+                   window_converted) * window_converted + window_converted) %>%
+          dplyr::mutate(window_time = factor(window_time,
+                                      levels = 1:(lookback_converted/window_converted)*window_converted))
+
+        # if (lookback_converted < 0) { # E.g. if it is a lookahead
+        #   output_item =
+        #     temporal_data_of_interest %>%
+        #     dplyr::filter(!!rlang::parse_expr(temporal_id) == groups[[temporal_id]][1] &
+        #                     !!rlang::parse_expr(temporal_time) > groups$time[1] - groups$window_time[1] + window_converted & # outcome cannot include right now
+        #                     !!rlang::parse_expr(temporal_time) <= groups$time[1] - groups$window_time[1])
+        # } else { # if it is a lookback
+        #   output_item =
+        #     temporal_data_of_interest %>%
+        #     dplyr::filter(!!rlang::parse_expr(temporal_id) == groups[[temporal_id]][1] &
+        #                     !!rlang::parse_expr(temporal_time) <= groups$time[1] - groups$window_time[1] + window_converted & # includes now in predictors
+        #                     !!rlang::parse_expr(temporal_time) > groups$time[1] - groups$window_time[1]) # up to X hours ago but not including X
+        # }
 
         output_item =
           output_item %>%
           # dplyr::filter(!!rlang::parse_expr(temporal_variable) == groups[[temporal_variable]]) %>%
-          dplyr::group_by(!!rlang::parse_expr(temporal_variable)) %>%
           dplyr::arrange(!!rlang::parse_expr(temporal_variable), !!rlang::parse_expr(temporal_time)) %>%
+          dplyr::group_by(!!rlang::parse_expr(temporal_variable), window_time) %>%
           dplyr::summarize_at(temporal_value,
             .funs = stats) %>%
-          tidyr::gather(wiz_stat, wiz_value, -!!rlang::parse_expr(temporal_variable)) %>%
+          tidyr::complete(window_time) %>%
+          dplyr::ungroup() %>%
+          dplyr::mutate(window_time = window_time %>% as.character() %>% as.numeric()) %>%
+          tidyr::gather(wiz_stat, wiz_value, -!!rlang::parse_expr(temporal_variable), -window_time) %>%
           dplyr::mutate(!!rlang::parse_expr(temporal_id) := groups[[temporal_id]][1],
-                        time = groups$time[1],
-                        window_time = groups$window_time[1]) %>%
+                        time = groups$time[1]) %>% #,
+                       # window_time = groups$window_time[1]) %>%
           dplyr::select(!!rlang::parse_expr(temporal_id), time, window_time,
                         !!rlang::parse_expr(temporal_variable), dplyr::everything())
-
 
         if (nrow(output_item) == 0) {
           output_item =
@@ -377,9 +376,12 @@ wiz_add_predictors = function(wiz_frame = NULL,
                               unique(temporal_data_of_interest[[temporal_variable]])),
               dplyr::tibble(wiz_stat = names(stats))
             ) %>%
+            tidyr::crossing(
+              dplyr::tibble(window_time = 1:(lookback_converted/window_converted)*window_converted)
+            ) %>%
             dplyr::mutate(!!rlang::parse_expr(temporal_id) := groups[[temporal_id]][1],
-                          time = groups$time[1],
-                          window_time = groups$window_time[1]) %>%
+                          time = groups$time[1]) %>% #,
+                        #  window_time = groups$window_time[1]) %>%
             dplyr::select(!!rlang::parse_expr(temporal_id), time, window_time,
                           !!rlang::parse_expr(temporal_variable), dplyr::everything()) %>%
             dplyr::mutate(wiz_value = NA)
@@ -480,6 +482,12 @@ wiz_add_predictors = function(wiz_frame = NULL,
     tidyr::spread(wiz_variable, wiz_value) %>%
     as.data.frame()
 
+
+  if (!is.null(dots[['baseline']]) && dots[['baseline']]) {
+    output_frame =
+        output_frame %>% dplyr::select(-time)
+  }
+
   message('Completed data cleanup.')
   if (log_file) {
     write(paste0(Sys.time(), ': Completed data cleanup.'),
@@ -502,9 +510,9 @@ wiz_add_predictors = function(wiz_frame = NULL,
 wiz_add_baseline_predictors = function(wiz_frame = NULL,
                                        variables = NULL,
                                        category = NULL,
-                                       offset = hours(0),
                                        lookback = hours(48),
                                        window = lookback,
+                                       offset = hours(0),
                                        stats = c(mean = mean,
                                                  min = min,
                                                  max = max),
@@ -512,17 +520,6 @@ wiz_add_baseline_predictors = function(wiz_frame = NULL,
                                        output_file = TRUE,
                                        log_file = FALSE,
                                        check_size_only = FALSE) {
-
-  wiz_frame = wiz_frame
-
-  wiz_frame$fixed_end = wiz_frame$fixed_start
-
-  if (!is.null(wiz_frame$step_units)) {
-   wiz_frame$temporal_data[[wiz_frame$temporal_time]] =
-     wiz_frame$temporal_data[[wiz_frame$temporal_time]] + lubridate::time_length(offset, unit = wiz_frame$step_units)
-  } else {
-    wiz_frame$temporal_data[[wiz_frame$temporal_time]] = wiz_frame$fixed_data[[wiz_frame$temporal_time]] + offset
-  }
 
   wiz_add_predictors(wiz_frame = wiz_frame,
                      variables = variables,
@@ -534,66 +531,7 @@ wiz_add_baseline_predictors = function(wiz_frame = NULL,
                      output_file = output_file,
                      log_file = log_file,
                      check_size_only = check_size_only,
-                     baseline = TRUE)
+                     baseline = TRUE,
+                     offset = offset)
 
 }
-
-
-
-
-#' Internal function
-#' Does not work because furrr cannot find it when it is in plan('multisession') on Windows
-#' So this function has been hard-coded into the add_predictors_function
-wiz_calc_stats_furrr = function(groups, temporal_id, temporal_variable, temporal_value, stats,
-                          lookback_converted, window_converted, temporal_data_of_interest,
-                          total_num_groups) {
-  if (lookback_converted < 0) { # E.g. if it is a lookahead
-    output_item =
-      temporal_data_of_interest %>%
-      dplyr::filter(!!rlang::parse_expr(temporal_id) == groups[[temporal_id]] &
-                      wiz_step_time > groups$time - groups$window_time + window_converted & # outcome cannot include right now
-                      wiz_step_time <= groups$time - groups$window_time)
-  } else { # if it is a lookback
-    output_item =
-      temporal_data_of_interest %>%
-      dplyr::filter(!!rlang::parse_expr(temporal_id) == groups[[temporal_id]] &
-                      wiz_step_time <= groups$time - groups$window_time + window_converted & # includes now in predictors
-                      wiz_step_time > groups$time - groups$window_time) # up to X hours ago but not including X
-  }
-
-  suppressWarnings({
-
-    output_item =
-      output_item %>%
-      # dplyr::filter(!!rlang::parse_expr(temporal_variable) == groups[[temporal_variable]]) %>%
-      dplyr::group_by(!!rlang::parse_expr(temporal_variable))%>%
-      dplyr::summarize_at(temporal_value,
-        .funs = stats) %>%
-      tidyr::gather(wiz_stat, wiz_value, -!!rlang::parse_expr(temporal_variable)) %>%
-      dplyr::mutate(!!rlang::parse_expr(temporal_id) := groups[[temporal_id]],
-                    time = groups$time,
-                    window_time = groups$window_time) %>%
-      dplyr::select(!!rlang::parse_expr(temporal_id), time, window_time,
-                    !!rlang::parse_expr(temporal_variable), dplyr::everything())
-
-  })
-
-  if (nrow(output_item) == 0) {
-    output_item =
-      tidyr::crossing(
-        dplyr::tibble(!!rlang::parse_expr(temporal_variable) :=
-                        unique(temporal_data_of_interest[[temporal_variable]])),
-        dplyr::tibble(wiz_stat = names(stats))
-      ) %>%
-      dplyr::mutate(!!rlang::parse_expr(temporal_id) := groups[[temporal_id]],
-                    time = groups$time,
-                    window_time = groups$window_time) %>%
-      dplyr::select(!!rlang::parse_expr(temporal_id), time, window_time,
-                    !!rlang::parse_expr(temporal_variable), dplyr::everything()) %>%
-      dplyr::mutate(wiz_value = NA)
-  }
-
-  # pb$tick()
-  return(output_item)
-}
-
