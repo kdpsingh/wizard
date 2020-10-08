@@ -21,3 +21,7 @@
 
 * All windows are now calculated simultaneously for each step, which greatly reduces the number of parallel jobs (and the time and memory taken by the allocating memory step).
 * Removed time column from `wiz_add_baseline_predictors()` so that it is treated as a type of "fixed data", and moved its logic into the `wiz_add_predictors()` function.
+
+# wizard 0.0.0.9004 (2020-10-08)
+
+* Added optional `max_length` argument to `wiz_frame()` that limits the maximum time or sequence length for each id.

@@ -58,6 +58,7 @@ wf = wiz_frame(fixed_data = sample_fixed_data,
                temporal_category = 'category',
                temporal_value = 'value',
                step = hours(6),
+               max_length = days(7),
                output_folder = file.path(tempdir(), 'wizard_dir'),
                save_wiz_frame = TRUE)
 

@@ -1,5 +1,5 @@
 #' New internal helper function
-wiz_define_steps = function(groups, temporal_id, step, max_step_times_per_id,
+wiz_define_steps = function(groups, temporal_id, step, step_units, max_length, baseline, max_step_times_per_id,
                             lookback_converted, window_converted, output_folder,
                             log_file) {
 
@@ -13,13 +13,27 @@ wiz_define_steps = function(groups, temporal_id, step, max_step_times_per_id,
   #        file.path(output_folder, 'wiz_log.txt'), append = TRUE)
   # }
 
-    max_step_time =
+  if (!is.null(baseline) && baseline) {
+    output_frame = data.frame(time = 0)
+    return(output_frame)
+  }
+
+  max_step_time =
     max_step_times_per_id %>%
     dplyr::filter(!!rlang::parse_expr(temporal_id) == groups[[temporal_id]]) %>%
     dplyr::pull(wiz_step_time)
 
   if (length(max_step_time) == 0 || max_step_time < 0) { # This should only be the case if someone has no observations in temporal_data after time 0
-    return(NULL)
+    stop(paste0('No temporal data was found during the relevant period for ',
+                temporal_id, ' ', groups[[temporal_id]], '.'))
+  }
+
+  if  (!is.null(max_length)) {
+    if (!is.null(step_units)) {
+      max_step_time = pmin(lubridate::time_length(max_length, unit = step_units), max_step_time)
+    } else {
+      max_step_time = pmin(max_length, max_step_time)
+    }
   }
 
   time = seq(0, max_step_time, by = step)
@@ -246,6 +260,9 @@ wiz_add_predictors = function(wiz_frame = NULL,
     dplyr::group_modify(~wiz_define_steps(groups = .y,
                                          temporal_id = wiz_frame$temporal_id,
                                          step = wiz_frame$step,
+                                         step_units = wiz_frame$step_units,
+                                         max_length = wiz_frame$max_length,
+                                         baseline = dots[['baseline']],
                                          max_step_times_per_id = max_step_times_per_id,
                                          lookback_converted = lookback_converted,
                                          window_converted = window_converted,
@@ -254,10 +271,6 @@ wiz_add_predictors = function(wiz_frame = NULL,
 
 
   if (!is.null(dots[['baseline']]) && dots[['baseline']]) {
-    output_frame =
-      output_frame %>%
-      dplyr::filter(time == 0)
-
     if (!is.null(wiz_frame$step_units)) {
       temporal_data_of_interest[[wiz_frame$temporal_time]] =
         temporal_data_of_interest[[wiz_frame$temporal_time]] +

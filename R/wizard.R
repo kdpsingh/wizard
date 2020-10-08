@@ -11,6 +11,7 @@ wiz_frame = function(fixed_data,
                      temporal_value = 'value',
                      temporal_category = temporal_variable,
                      step = NULL,
+                     max_length = NULL,
                      output_folder = NULL,
                      create_folder = FALSE,
                      save_wiz_frame = FALSE,
@@ -52,6 +53,12 @@ wiz_frame = function(fixed_data,
     }
     if (any(is.na(fixed_data[[fixed_end]]))) {
       stop('The fixed_end column cannot contain missing values.')
+    }
+  }
+
+  if (!is.null(max_length)) {
+    if (class(max_length) != class(step)) {
+      stop('Both the max_length and step must be in the same units.')
     }
   }
 
@@ -220,6 +227,7 @@ wiz_frame = function(fixed_data,
       temporal_value = temporal_value,
       temporal_category = temporal_category,
       step = step,
+      max_length = max_length,
       step_units = step_units,
       output_folder = output_folder,
       fixed_data_dict = fixed_data_dict,
