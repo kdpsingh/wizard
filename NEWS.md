@@ -22,6 +22,10 @@
 * All windows are now calculated simultaneously for each step, which greatly reduces the number of parallel jobs (and the time and memory taken by the allocating memory step).
 * Removed time column from `wiz_add_baseline_predictors()` so that it is treated as a type of "fixed data", and moved its logic into the `wiz_add_predictors()` function.
 
-# wizard 0.0.0.9004 (2020-10-08)
+# wizard 0.0.0.9004 (2020-10-09)
 
 * Added optional `max_length` argument to `wiz_frame()` that limits the maximum time or sequence length for each id.
+* Bug fix to incorrect calculation of outcomes (this error was introduced in 0.0.0.9003 due to substantial refactoring of code)
+* Fixed LOCF imputation bug: now, imputation only occurs within windows in the lookback period (and not beyond)
+* Fixed missingness leading to length stat of NA. Now, every stat's missingness is computed dynamically (e.g., length becomes 0)
+* Fixed implicit missingness issue due to some IDs and times ids not having certain variables left after filtering

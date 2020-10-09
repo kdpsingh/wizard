@@ -62,6 +62,7 @@ char_frame = wiz_frame(fixed_data = dataset %>% distinct(id),
                        temporal_variable = 'variable',
                        temporal_value = 'char',
                        step = 1,
+                       max_length = 20,
                        output_folder = 'Z:/kdpsingh/wiz_char_lang')
 ```
 
@@ -77,11 +78,23 @@ model_predictors = char_frame %>%
                      stats = c(first = . %>% .[1]),
                      output_file = FALSE)
 
+model_predictors_ngram = char_frame %>% 
+  wiz_add_predictors(variables = 'variable', 
+                     lookback = 2,
+                     stats = c(ngram = . %>% paste(collapse = '')),
+                     output_file = FALSE)
+
 
 model_outcome = char_frame %>% 
   wiz_add_outcomes(variables = 'variable', 
                    lookahead = 1,
                    stats = c(first = . %>% .[1]),
+                   output_file = FALSE)
+
+model_outcome_ngram = char_frame %>% 
+  wiz_add_outcomes(variables = 'variable', 
+                   lookahead = 2,
+                   stats = c(ngram = . %>% paste(collapse = '')),
                    output_file = FALSE)
 ```
 
@@ -89,9 +102,19 @@ model_outcome = char_frame %>%
 
 ```{r}
 model_data = wiz_combine(char_frame, 
-                         model_outcome, 
+                         model_outcome,
                          model_predictors)
 
 head(model_data)
+```
+
+## Combine the ngram datasets
+
+```{r}
+model_data_ngram = wiz_combine(char_frame,
+                               model_outcome_ngram,
+                               model_predictors_ngram)
+
+head(model_data_ngram)
 ```
 

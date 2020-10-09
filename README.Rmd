@@ -58,7 +58,7 @@ wf = wiz_frame(fixed_data = sample_fixed_data,
                temporal_category = 'category',
                temporal_value = 'value',
                step = hours(6),
-               max_length = days(7),
+               max_length = days(7), # optional parameter to limit to first 7 days of hospitalization
                output_folder = file.path(tempdir(), 'wizard_dir'),
                save_wiz_frame = TRUE)
 
@@ -112,16 +112,13 @@ wf %>%
                                median = median,
                                length = length),
                      log_file = TRUE) %>%
- wiz_add_baseline_predictors(variables = 'cr', # add baseline creatinine
-                     lookback = days(90),
-                     offset = hours(10),
-                     stats = c(min = min)) %>%
- wiz_add_predictors(category = 'med', # Note: category is always a regular expression 
+  wiz_add_baseline_predictors(variables = 'cr', # add baseline creatinine
+                              lookback = days(90),
+                              offset = hours(10),
+                              stats = c(min = min)) %>%
+  wiz_add_predictors(category = 'med', # Note: category is always a regular expression 
                      lookback = days(7),
-                     offset = days(1),
-                     stats = c(sum = sum,
-                               any = any),
-                     impute = FALSE) %>% # Note: do *not* perform carry-forward imputation 
+                     stats = c(sum = sum)) %>% 
   wiz_add_outcomes(variables = 'cr',
                    lookahead = hours(24), 
                    stats = c(max = max))
@@ -156,7 +153,6 @@ wf %>%
                                length = length),
                      output_file = FALSE) %>% 
   head()
-
 ```
 
 ## You can also supply a vector of variables

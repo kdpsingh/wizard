@@ -164,7 +164,9 @@ wiz_frame = function(fixed_data,
   }
 
   # check to make sure fixed_start is never greater than fixed_end
-  if (any(fixed_data[[fixed_start]] > fixed_data[[fixed_end]])) {
+  if (any(!is.na(fixed_data[[fixed_start]]) &
+      !is.na(fixed_data[[fixed_end]]) &
+      fixed_data[[fixed_start]] > fixed_data[[fixed_end]])) {
     stop('fixed_start should never be greater than fixed_end.')
   }
 
