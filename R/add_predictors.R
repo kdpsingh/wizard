@@ -63,7 +63,7 @@ wiz_add_predictors = function(wiz_frame = NULL,
                                         max = max),
                               impute = TRUE,
                               output_file = TRUE,
-                              log_file = FALSE,
+                              log_file = TRUE,
                               check_size_only = FALSE,
                               ...) {
   dots = list(...)
@@ -569,7 +569,7 @@ wiz_add_baseline_predictors = function(wiz_frame = NULL,
                                                  max = max),
                                        impute = TRUE,
                                        output_file = TRUE,
-                                       log_file = FALSE,
+                                       log_file = TRUE,
                                        check_size_only = FALSE) {
 
   wiz_add_predictors(wiz_frame = wiz_frame,

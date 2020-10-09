@@ -14,7 +14,7 @@ wiz_add_predictors(
   stats = c(mean = mean, min = min, max = max),
   impute = TRUE,
   output_file = TRUE,
-  log_file = FALSE,
+  log_file = TRUE,
   check_size_only = FALSE,
   ...
 )

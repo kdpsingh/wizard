@@ -8,7 +8,7 @@ wiz_dummy_code(
   wiz_frame = NULL,
   numeric_threshold = 0.5,
   variables = NULL,
-  save_wiz_frame = FALSE
+  save_wiz_frame = TRUE
 )
 }
 \description{

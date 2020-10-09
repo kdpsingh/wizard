@@ -19,7 +19,7 @@ wiz_frame(
   max_length = NULL,
   output_folder = NULL,
   create_folder = FALSE,
-  save_wiz_frame = FALSE,
+  save_wiz_frame = TRUE,
   numeric_threshold = 0.5
 )
 }

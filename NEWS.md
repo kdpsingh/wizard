@@ -29,3 +29,4 @@
 * Fixed LOCF imputation bug: now, imputation only occurs within windows in the lookback period (and not beyond)
 * Fixed missingness leading to length stat of NA. Now, every stat's missingness is computed dynamically (e.g., length becomes 0)
 * Fixed implicit missingness issue due to some IDs and times ids not having certain variables left after filtering
+* Changed defaults so that `save_wiz_frame` and `log_file` are `TRUE`. This makes it more consistent with `output_file = TRUE` in that saving output and logs to file are the default.

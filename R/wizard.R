@@ -14,7 +14,7 @@ wiz_frame = function(fixed_data,
                      max_length = NULL,
                      output_folder = NULL,
                      create_folder = FALSE,
-                     save_wiz_frame = FALSE,
+                     save_wiz_frame = TRUE,
                      numeric_threshold = 0.5) {
 
   assertthat::assert_that('data.frame' %in% class(fixed_data))
@@ -325,7 +325,7 @@ wiz_build_temporal_data_dictionary = function (temporal_data,
 wiz_dummy_code = function(wiz_frame = NULL,
                           numeric_threshold = 0.5,
                           variables = NULL,
-                          save_wiz_frame = FALSE) {
+                          save_wiz_frame = TRUE) {
 
   if (is.null(variables)) { # if you do NOT supply a vector of variables (the default)
 
