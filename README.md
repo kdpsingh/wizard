@@ -36,14 +36,21 @@ library(wizard)
 
 ``` r
 library(magrittr)
+#> Warning: package 'magrittr' was built under R version 3.6.3
 library(lubridate)
+#> Warning: package 'lubridate' was built under R version 3.6.3
+#> 
+#> Attaching package: 'lubridate'
+#> The following objects are masked from 'package:base':
+#> 
+#>     date, intersect, setdiff, union
 
 future::plan('multisession')
 
 unlink(file.path(tempdir(), 'wizard_dir', '*.*'))
 
 wf = wiz_frame(fixed_data = sample_fixed_data,
-               temporal_data = sample_temporal_data %>% dplyr::filter(id %in% 1:10),
+               temporal_data = sample_temporal_data %>% dplyr::filter(id %in% 1:100),
                fixed_id = 'id',
                fixed_start = 'admit_time',
                fixed_end = 'dc_time',
@@ -55,16 +62,17 @@ wf = wiz_frame(fixed_data = sample_fixed_data,
                step = hours(6),
                max_length = days(7), # optional parameter to limit to first 7 days of hospitalization
                output_folder = file.path(tempdir(), 'wizard_dir'),
-               save_wiz_frame = TRUE)
+               create_folder = TRUE)
 ```
 
 ## Let’s look at the automatically generated data dictionaries
 
 ``` r
 names(wf)
-#>  [1] "fixed_data"         "temporal_data"      "fixed_id"           "fixed_start"        "fixed_end"          "temporal_id"       
-#>  [7] "temporal_time"      "temporal_variable"  "temporal_value"     "temporal_category"  "step"               "max_length"        
-#> [13] "step_units"         "output_folder"      "fixed_data_dict"    "temporal_data_dict"
+#>  [1] "fixed_data"         "temporal_data"      "fixed_id"           "fixed_start"        "fixed_end"         
+#>  [6] "temporal_id"        "temporal_time"      "temporal_variable"  "temporal_value"     "temporal_category" 
+#> [11] "step"               "max_length"         "step_units"         "output_folder"      "fixed_data_dict"   
+#> [16] "temporal_data_dict" "batch_size"
 
 wf$step
 #> [1] 6
@@ -94,7 +102,7 @@ wf$temporal_data_dict
 
 ``` r
 wf = wf %>% 
-  wiz_dummy_code(save_wiz_frame = TRUE)
+  wiz_dummy_code()
 ```
 
 This affects only the temporal data and not the fixed data.
@@ -114,12 +122,13 @@ wf$temporal_data_dict
 #>              variable   class
 #> 1                  cr numeric
 #> 2        cr_abnl_high numeric
-#> 3      cr_abnl_normal numeric
-#> 4          cr_high_no numeric
-#> 5         cr_high_yes numeric
-#> 6   med_acetaminophen numeric
-#> 7         med_aspirin numeric
-#> 8 med_diphenhydramine numeric
+#> 3         cr_abnl_low numeric
+#> 4      cr_abnl_normal numeric
+#> 5          cr_high_no numeric
+#> 6         cr_high_yes numeric
+#> 7   med_acetaminophen numeric
+#> 8         med_aspirin numeric
+#> 9 med_diphenhydramine numeric
 ```
 
 ## Let’s add some predictors and outcomes
@@ -141,8 +150,7 @@ wf %>%
                                min = min,
                                max = max,
                                median = median,
-                               length = length),
-                     log_file = TRUE) %>%
+                               length = length)) %>%
   wiz_add_baseline_predictors(variables = 'cr', # add baseline creatinine
                               lookback = days(90),
                               offset = hours(10),
@@ -155,49 +163,43 @@ wf %>%
                    stats = c(max = max))
 #> Joining, by = "id"
 #> Processing variables: cr...
-#> Anticipated number of rows in final output: 136
 #> Allocating memory...
+#> Number of rows in final output: 1540
 #> Parallel processing is ENABLED.
+#> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: ---------------------------------------------------------------- 100%
+#>  Progress: --------------------------------------                           100% Progress: --------------------------------------------------------         100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
-#> Fixing implicit missingness...
-#> Performing LOCF imputation...
-#> Completed data cleanup.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpuMh5gu/wizard_dir/temporal_predictors_variables_cr_2020_10_09_00_50_34.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/temporal_predictors_variables_cr_2020_10_11_01_27_04.csv
 #> Joining, by = "id"
 #> Processing variables: cr...
-#> Anticipated number of rows in final output: 136
 #> Allocating memory...
+#> Number of rows in final output: 100
 #> Parallel processing is ENABLED.
+#> Determining missing values for each statistic...
 #> Beginning calculation...
 #> Completed calculation.
-#> Fixing implicit missingness...
-#> Performing LOCF imputation...
-#> Completed data cleanup.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpuMh5gu/wizard_dir/temporal_predictors_variables_cr_2020_10_09_00_50_35.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/temporal_predictors_variables_cr_2020_10_11_01_27_07.csv
 #> Joining, by = "id"
 #> Processing category: med...
-#> Anticipated number of rows in final output: 136
 #> Allocating memory...
+#> Number of rows in final output: 1540
 #> Parallel processing is ENABLED.
+#> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: ---------------------------------------------------------------- 100%
+#>  Progress: ----------------------------------------                         100% Progress: ------------------------------------------------------------     100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
-#> Fixing implicit missingness...
-#> Performing LOCF imputation...
-#> Completed data cleanup.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpuMh5gu/wizard_dir/temporal_predictors_category_med_2020_10_09_00_50_37.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/temporal_predictors_category_med_2020_10_11_01_27_28.csv
 #> Joining, by = "id"
 #> Processing variables: cr...
-#> Anticipated number of rows in final output: 136
 #> Allocating memory...
+#> Number of rows in final output: 1540
 #> Parallel processing is ENABLED.
+#> Determining missing values for each statistic...
 #> Beginning calculation...
+#>  Progress: ---------------------------------------------                    100% Progress: --------------------------------------------------------------   100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
-#> Fixing implicit missingness...
-#> Completed data cleanup.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpuMh5gu/wizard_dir/temporal_outcomes_variables_cr_2020_10_09_00_50_38.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/temporal_outcomes_variables_cr_2020_10_11_01_27_48.csv
 ```
 
 ## Let’s combine our output into a single data frame
@@ -226,20 +228,20 @@ head(model_data)
 #> 4  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23   18          1.179722                         1
 #> 5  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23   24          1.274939                         1
 #> 6  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23   30          1.274939                         1
-#>   med_aspirin_sum_168 med_diphenhydramine_sum_168 cr_length_06 cr_length_12 cr_max_06 cr_max_12 cr_mean_06 cr_mean_12 cr_median_06
-#> 1                   0                           0            1            1  1.003659  1.030098   1.003659   1.030098     1.003659
-#> 2                   0                           0            0            1  1.003659  1.003659   1.003659   1.003659     1.003659
-#> 3                   0                           0            1            0  1.039322        NA   1.039322         NA     1.039322
-#> 4                   0                           0            2            1  1.217020  1.039322   1.109985   1.039322     1.109985
-#> 5                   0                           0            1            2  1.179722  1.217020   1.179722   1.109985     1.179722
-#> 6                   0                           0            3            1  1.165989  1.179722   1.069630   1.179722     1.096827
-#>   cr_median_12 cr_min_06 cr_min_12 baseline_cr_min_2160
-#> 1     1.030098 1.0036587  1.030098                   NA
-#> 2     1.003659 1.0036587  1.003659                   NA
-#> 3           NA 1.0393216        NA                   NA
-#> 4     1.039322 1.0029506  1.039322                   NA
-#> 5     1.109985 1.1797219  1.002951                   NA
-#> 6     1.179722 0.9460735  1.179722                   NA
+#>   med_aspirin_sum_168 med_diphenhydramine_sum_168 cr_length_06 cr_length_12 cr_max_06 cr_max_12 cr_mean_06 cr_mean_12
+#> 1                   0                           0            1            1  1.003659  1.030098   1.003659   1.030098
+#> 2                   0                           0            0            1  1.003659  1.003659   1.003659   1.003659
+#> 3                   0                           0            1            0  1.039322        NA   1.039322         NA
+#> 4                   0                           0            2            1  1.217020  1.039322   1.109985   1.039322
+#> 5                   0                           0            1            2  1.179722  1.217020   1.179722   1.109985
+#> 6                   0                           0            3            1  1.165989  1.179722   1.069630   1.179722
+#>   cr_median_06 cr_median_12 cr_min_06 cr_min_12 baseline_cr_min_2160
+#> 1     1.003659     1.030098 1.0036587  1.030098                   NA
+#> 2     1.003659     1.003659 1.0036587  1.003659                   NA
+#> 3     1.039322           NA 1.0393216        NA                   NA
+#> 4     1.109985     1.039322 1.0029506  1.039322                   NA
+#> 5     1.179722     1.109985 1.1797219  1.002951                   NA
+#> 6     1.096827     1.179722 0.9460735  1.179722                   NA
 ```
 
 ## Testing wiz\_frame without writing output to files
@@ -262,14 +264,13 @@ wf %>%
   head()
 #> Joining, by = "id"
 #> Processing variables: cr...
-#> Anticipated number of rows in final output: 136
 #> Allocating memory...
+#> Number of rows in final output: 1540
 #> Parallel processing is ENABLED.
+#> Determining missing values for each statistic...
 #> Beginning calculation...
+#>  Progress: ---------------------------------------                          100% Progress: -----------------------------------------------------------      100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
-#> Fixing implicit missingness...
-#> Performing LOCF imputation...
-#> Completed data cleanup.
 #>   id time cr_length_06 cr_length_12 cr_max_06 cr_max_12 cr_mean_06 cr_mean_12 cr_median_06 cr_median_12 cr_min_06 cr_min_12
 #> 1  1    0            1            1  1.003659  1.030098   1.003659   1.030098     1.003659     1.030098 1.0036587  1.030098
 #> 2  1    6            0            1  1.003659  1.003659   1.003659   1.003659     1.003659     1.003659 1.0036587  1.003659
@@ -290,14 +291,13 @@ wf %>%
   head()
 #> Joining, by = "id"
 #> Processing variables: cr, med_aspirin...
-#> Anticipated number of rows in final output: 136
 #> Allocating memory...
+#> Number of rows in final output: 1540
 #> Parallel processing is ENABLED.
+#> Determining missing values for each statistic...
 #> Beginning calculation...
+#>  Progress: -----------------------------------------                        100% Progress: ------------------------------------------------------------     100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
-#> Fixing implicit missingness...
-#> Performing LOCF imputation...
-#> Completed data cleanup.
 #>   id time cr_length_168 med_aspirin_length_168
 #> 1  1    0             2                      0
 #> 2  1    6             2                      0
@@ -318,14 +318,13 @@ wf %>%
   head()
 #> Joining, by = "id"
 #> Processing category: lab|med...
-#> Anticipated number of rows in final output: 136
 #> Allocating memory...
+#> Number of rows in final output: 1540
 #> Parallel processing is ENABLED.
+#> Determining missing values for each statistic...
 #> Beginning calculation...
+#>  Progress: ----------------------------------------                         100% Progress: ----------------------------------------------------------       100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
-#> Fixing implicit missingness...
-#> Performing LOCF imputation...
-#> Completed data cleanup.
 #>   id time cr_length_12 med_acetaminophen_length_12 med_aspirin_length_12 med_diphenhydramine_length_12
 #> 1  1    0            2                           0                     0                             0
 #> 2  1    6            1                           0                     0                             0
@@ -354,11 +353,87 @@ benchmark_results[['multisession']] =
                                    min = min,
                                    max = max,
                                    median = median,
-                                   length = length),
-                         output_file = FALSE),
+                                   length = length)),
     times = 1
   )
+#>  Progress: -------------------------------------                            100% Progress: --------------------------------------------------------         100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
+```
+
+### Running in parallel with a batch\_size of 20
+
+``` r
+
+wf_with_chunks = wf
+wf_with_chunks$batch_size = 20
+
+benchmark_results[['multisession with batch_size 20']] = 
+  microbenchmark::microbenchmark(
+    wf_with_chunks %>% 
+      wiz_add_predictors(variable = 'cr',
+                         lookback = hours(48), 
+                         window = hours(6), 
+                         stats = c(mean = mean,
+                                   min = min,
+                                   max = max,
+                                   median = median,
+                                   length = length)),
+    times = 1
+  )
+#> Processing chunk # 1 out of 5...
+#> Joining, by = "id"
+#> Processing variables: cr...
+#> Allocating memory...
+#> Number of rows in final output: 270
+#> Parallel processing is ENABLED.
+#> Determining missing values for each statistic...
+#> Beginning calculation...
 #>  Progress: ---------------------------------------------------------------- 100%
+#> Completed calculation.
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/chunk_1_temporal_predictors_variables_cr_2020_10_11_01_29_41.csv
+#> Processing chunk # 2 out of 5...
+#> Joining, by = "id"
+#> Processing variables: cr...
+#> Allocating memory...
+#> Number of rows in final output: 294
+#> Parallel processing is ENABLED.
+#> Determining missing values for each statistic...
+#> Beginning calculation...
+#>  Progress: ---------------------------------------------------------------- 100%
+#> Completed calculation.
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/chunk_2_temporal_predictors_variables_cr_2020_10_11_01_29_46.csv
+#> Processing chunk # 3 out of 5...
+#> Joining, by = "id"
+#> Processing variables: cr...
+#> Allocating memory...
+#> Number of rows in final output: 309
+#> Parallel processing is ENABLED.
+#> Determining missing values for each statistic...
+#> Beginning calculation...
+#>  Progress: ---------------------------------------------------------------- 100%
+#> Completed calculation.
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/chunk_3_temporal_predictors_variables_cr_2020_10_11_01_29_52.csv
+#> Processing chunk # 4 out of 5...
+#> Joining, by = "id"
+#> Processing variables: cr...
+#> Allocating memory...
+#> Number of rows in final output: 345
+#> Parallel processing is ENABLED.
+#> Determining missing values for each statistic...
+#> Beginning calculation...
+#>  Progress: --------------------------------------------------------------   100% Progress: ---------------------------------------------------------------- 100%
+#> Completed calculation.
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/chunk_4_temporal_predictors_variables_cr_2020_10_11_01_29_58.csv
+#> Processing chunk # 5 out of 5...
+#> Joining, by = "id"
+#> Processing variables: cr...
+#> Allocating memory...
+#> Number of rows in final output: 322
+#> Parallel processing is ENABLED.
+#> Determining missing values for each statistic...
+#> Beginning calculation...
+#>  Progress: ---------------------------------------------------------------- 100%
+#> Completed calculation.
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/chunk_5_temporal_predictors_variables_cr_2020_10_11_01_30_03.csv
 ```
 
 ### Running in serial
@@ -376,8 +451,7 @@ benchmark_results[['sequential']] =
                                  min = min,
                                  max = max,
                                  median = median,
-                                 length = length),
-                       output_file = FALSE),
+                                 length = length)),
   times = 1
   )
 ```
@@ -385,18 +459,26 @@ benchmark_results[['sequential']] =
 ## Benchmark results
 
 ``` r
+
 benchmark_results
 #> $multisession
 #> Unit: seconds
-#>                                                                                                                                                                                                    expr
-#>  wf %>% wiz_add_predictors(variable = "cr", lookback = hours(48),      window = hours(6), stats = c(mean = mean, min = min, max = max,          median = median, length = length), output_file = FALSE)
+#>                                                                                                                                                                               expr
+#>  wf %>% wiz_add_predictors(variable = "cr", lookback = hours(48),      window = hours(6), stats = c(mean = mean, min = min, max = max,          median = median, length = length))
 #>       min       lq     mean   median       uq      max neval
-#>  4.387005 4.387005 4.387005 4.387005 4.387005 4.387005     1
+#>  23.88308 23.88308 23.88308 23.88308 23.88308 23.88308     1
+#> 
+#> $`multisession with batch_size 20`
+#> Unit: seconds
+#>                                                                                                                                                                                           expr
+#>  wf_with_chunks %>% wiz_add_predictors(variable = "cr", lookback = hours(48),      window = hours(6), stats = c(mean = mean, min = min, max = max,          median = median, length = length))
+#>       min       lq     mean   median       uq      max neval
+#>  26.53323 26.53323 26.53323 26.53323 26.53323 26.53323     1
 #> 
 #> $sequential
 #> Unit: seconds
-#>                                                                                                                                                                                                    expr
-#>  wf %>% wiz_add_predictors(variable = "cr", lookback = hours(48),      window = hours(6), stats = c(mean = mean, min = min, max = max,          median = median, length = length), output_file = FALSE)
+#>                                                                                                                                                                               expr
+#>  wf %>% wiz_add_predictors(variable = "cr", lookback = hours(48),      window = hours(6), stats = c(mean = mean, min = min, max = max,          median = median, length = length))
 #>       min       lq     mean   median       uq      max neval
-#>  9.533863 9.533863 9.533863 9.533863 9.533863 9.533863     1
+#>  203.6584 203.6584 203.6584 203.6584 203.6584 203.6584     1
 ```

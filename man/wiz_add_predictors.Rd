@@ -2,8 +2,9 @@
 % Please edit documentation in R/add_predictors.R
 \name{wiz_add_predictors}
 \alias{wiz_add_predictors}
-\title{New furrr-enabled add_predictors function
-#' New add_predictors function using group_modify}
+\title{Function to add baseline predictors
+Offset of hours(1) would mean that everything would be anchored to 1 hour
+before fixed_start.}
 \usage{
 wiz_add_predictors(
   wiz_frame = NULL,
@@ -11,15 +12,16 @@ wiz_add_predictors(
   category = NULL,
   lookback = hours(48),
   window = lookback,
+  offset = hours(0),
   stats = c(mean = mean, min = min, max = max),
   impute = TRUE,
   output_file = TRUE,
   log_file = TRUE,
-  check_size_only = FALSE,
-  ...
+  check_size_only = FALSE
 )
 }
 \description{
-New furrr-enabled add_predictors function
-#' New add_predictors function using group_modify
+Function to add baseline predictors
+Offset of hours(1) would mean that everything would be anchored to 1 hour
+before fixed_start.
 }

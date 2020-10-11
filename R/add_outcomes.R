@@ -13,14 +13,61 @@ wiz_add_outcomes = function(wiz_frame = NULL,
                             log_file = TRUE,
                             check_size_only = FALSE) {
 
-  wiz_add_predictors(wiz_frame = wiz_frame,
-                     variables = variables,
-                     category = category,
-                     lookback = -lookahead,
-                     window = -window,
-                     stats = stats,
-                     impute = impute,
-                     output_file = output_file,
-                     log_file = log_file,
-                     check_size_only = check_size_only)
+  if (is.null(wiz_frame$batch_size)) {
+    wiz_add_predictors_internal(wiz_frame = wiz_frame,
+                                variables = variables,
+                                category = category,
+                                lookback = -lookahead,
+                                window = -window,
+                                stats = stats,
+                                impute = impute,
+                                output_file = output_file,
+                                log_file = log_file,
+                                check_size_only = check_size_only)
+  } else {
+    assertthat::assert_that(wiz_frame$batch_size > 0)
+
+    # Make chunks based on temporal data, not fixed data
+    unique_temporal_ids = sort(unique(wiz_frame$temporal_data[[wiz_frame$temporal_id]]))
+    chunk_ids = ceiling(seq_len(length(unique_temporal_ids)) / wiz_frame$batch_size)
+    unique_chunks = unique(chunk_ids)
+    n_chunks = max(unique_chunks)
+
+    for (chunk_num in unique_chunks) {
+      message(paste0('Processing chunk # ', chunk_num, ' out of ', n_chunks, '...'))
+      if (log_file) {
+        write(paste0(Sys.time(), ': Processing chunk # ', chunk_num, ' out of ', n_chunks, '...'),
+              file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
+      }
+
+      wiz_frame_chunk = wiz_frame
+
+      wiz_frame_chunk$temporal_data =
+        wiz_frame_chunk$temporal_data %>%
+        dplyr::filter(!!rlang::parse_expr(wiz_frame_chunk$temporal_id) %in%
+                        unique_temporal_ids[chunk_ids == chunk_num])
+
+      wiz_frame_chunk$fixed_data =
+        wiz_frame_chunk$fixed_data %>%
+        dplyr::filter(!!rlang::parse_expr(wiz_frame_chunk$fixed_id) %in%
+                        wiz_frame_chunk$temporal_data[[wiz_frame_chunk$temporal_id]])
+
+      wiz_add_predictors_internal(wiz_frame = wiz_frame,
+                                  variables = variables,
+                                  category = category,
+                                  lookback = -lookahead,
+                                  window = -window,
+                                  stats = stats,
+                                  impute = impute,
+                                  output_file = output_file,
+                                  log_file = log_file,
+                                  check_size_only = check_size_only,
+                                  filename_prefix = paste0('chunk_',
+                                                           stringr::str_pad(chunk_num,
+                                                                            nchar(n_chunks),
+                                                                            pad = '0'),
+                                                           '_'))
+
+    }
+  }
 }

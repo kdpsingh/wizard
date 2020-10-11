@@ -15,6 +15,7 @@ wiz_frame = function(fixed_data,
                      output_folder = NULL,
                      create_folder = FALSE,
                      save_wiz_frame = TRUE,
+                     batch_size = NULL,
                      numeric_threshold = 0.5) {
 
   assertthat::assert_that('data.frame' %in% class(fixed_data))
@@ -233,7 +234,8 @@ wiz_frame = function(fixed_data,
       step_units = step_units,
       output_folder = output_folder,
       fixed_data_dict = fixed_data_dict,
-      temporal_data_dict = temporal_data_dict),
+      temporal_data_dict = temporal_data_dict,
+      batch_size = batch_size),
       class = 'wiz_frame')
 
   if (save_wiz_frame) {
@@ -242,7 +244,6 @@ wiz_frame = function(fixed_data,
 
   return(wiz_frame)
 }
-
 
 
 #' Determine the names and types of all of the temporal data variables.

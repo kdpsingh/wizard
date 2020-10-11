@@ -48,7 +48,7 @@ future::plan('multisession')
 unlink(file.path(tempdir(), 'wizard_dir', '*.*'))
 
 wf = wiz_frame(fixed_data = sample_fixed_data,
-               temporal_data = sample_temporal_data %>% dplyr::filter(id %in% 1:10),
+               temporal_data = sample_temporal_data %>% dplyr::filter(id %in% 1:100),
                fixed_id = 'id',
                fixed_start = 'admit_time',
                fixed_end = 'dc_time',
@@ -60,7 +60,7 @@ wf = wiz_frame(fixed_data = sample_fixed_data,
                step = hours(6),
                max_length = days(7), # optional parameter to limit to first 7 days of hospitalization
                output_folder = file.path(tempdir(), 'wizard_dir'),
-               save_wiz_frame = TRUE)
+               create_folder = TRUE)
 
 ```
 
@@ -83,7 +83,7 @@ wf$temporal_data_dict
 
 ```{r}
 wf = wf %>% 
-  wiz_dummy_code(save_wiz_frame = TRUE)
+  wiz_dummy_code()
 ```
 
 
@@ -110,8 +110,7 @@ wf %>%
                                min = min,
                                max = max,
                                median = median,
-                               length = length),
-                     log_file = TRUE) %>%
+                               length = length)) %>%
   wiz_add_baseline_predictors(variables = 'cr', # add baseline creatinine
                               lookback = days(90),
                               offset = hours(10),
@@ -196,11 +195,33 @@ benchmark_results[['multisession']] =
                                    min = min,
                                    max = max,
                                    median = median,
-                                   length = length),
-                         output_file = FALSE),
+                                   length = length)),
     times = 1
   )
 ```
+
+### Running in parallel with a batch_size of 20
+
+```{r}
+
+wf_with_chunks = wf
+wf_with_chunks$batch_size = 20
+
+benchmark_results[['multisession with batch_size 20']] = 
+  microbenchmark::microbenchmark(
+    wf_with_chunks %>% 
+      wiz_add_predictors(variable = 'cr',
+                         lookback = hours(48), 
+                         window = hours(6), 
+                         stats = c(mean = mean,
+                                   min = min,
+                                   max = max,
+                                   median = median,
+                                   length = length)),
+    times = 1
+  )
+```
+
 
 ### Running in serial
 
@@ -217,8 +238,7 @@ benchmark_results[['sequential']] =
                                  min = min,
                                  max = max,
                                  median = median,
-                                 length = length),
-                       output_file = FALSE),
+                                 length = length)),
   times = 1
   )
 
@@ -227,5 +247,11 @@ benchmark_results[['sequential']] =
 ## Benchmark results
 
 ```{r}
+
 benchmark_results
 ```
+
+```{r include=FALSE}
+unlink(file.path(tempdir(), 'wizard_dir', '*.*'))
+```
+

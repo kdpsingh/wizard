@@ -30,3 +30,10 @@
 * Fixed missingness leading to length stat of NA. Now, every stat's missingness is computed dynamically (e.g., length becomes 0)
 * Fixed implicit missingness issue due to some IDs and times ids not having certain variables left after filtering
 * Changed defaults so that `save_wiz_frame` and `log_file` are `TRUE`. This makes it more consistent with `output_file = TRUE` in that saving output and logs to file are the default.
+
+# wizard 0.0.0.9005 (2020-10-11)
+* Created batch_size option in wiz_frame() to chunk processing into batches. A batch of 1000 means 1000 patients will be processed at once.
+* Moved processing code to wizard_internal.R and converted all other functions into wrappers
+* Moved implicit missingness and LOCF imputation into the parallel jobs to reduce memory footprint after row-binding parallel jobs
+* Bug fix to error introduced in wizard 0.0.0.9004 resulting extra time steps for individuals during "handling implicit missingness" step.
+* Note: wiz_combine() does not support batches yet but will in a subsequent version.
