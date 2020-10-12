@@ -36,14 +36,7 @@ library(wizard)
 
 ``` r
 library(magrittr)
-#> Warning: package 'magrittr' was built under R version 3.6.3
 library(lubridate)
-#> Warning: package 'lubridate' was built under R version 3.6.3
-#> 
-#> Attaching package: 'lubridate'
-#> The following objects are masked from 'package:base':
-#> 
-#>     date, intersect, setdiff, union
 
 future::plan('multisession')
 
@@ -69,10 +62,11 @@ wf = wiz_frame(fixed_data = sample_fixed_data,
 
 ``` r
 names(wf)
-#>  [1] "fixed_data"         "temporal_data"      "fixed_id"           "fixed_start"        "fixed_end"         
-#>  [6] "temporal_id"        "temporal_time"      "temporal_variable"  "temporal_value"     "temporal_category" 
-#> [11] "step"               "max_length"         "step_units"         "output_folder"      "fixed_data_dict"   
-#> [16] "temporal_data_dict" "batch_size"
+#>  [1] "fixed_data"         "temporal_data"      "fixed_id"           "fixed_start"       
+#>  [5] "fixed_end"          "temporal_id"        "temporal_time"      "temporal_variable" 
+#>  [9] "temporal_value"     "temporal_category"  "step"               "max_length"        
+#> [13] "step_units"         "output_folder"      "fixed_data_dict"    "temporal_data_dict"
+#> [17] "batch_size"
 
 wf$step
 #> [1] 6
@@ -98,7 +92,7 @@ wf$temporal_data_dict
 #> 4      med character
 ```
 
-## Let’s dummy-code the temporal categorical variables
+## Let’s dummy code the temporal categorical variables
 
 ``` r
 wf = wf %>% 
@@ -168,9 +162,9 @@ wf %>%
 #> Parallel processing is ENABLED.
 #> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: --------------------------------------                           100% Progress: --------------------------------------------------------         100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
+#>  Progress: --------------------------------------                           100% Progress: ----------------------------------------------------------       100% Progress: --------------------------------------------------------------   100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/temporal_predictors_variables_cr_2020_10_11_01_27_04.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpAJcfQs/wizard_dir/temporal_predictors_variables_cr_2020_10_12_17_41_19.csv
 #> Joining, by = "id"
 #> Processing variables: cr...
 #> Allocating memory...
@@ -179,7 +173,7 @@ wf %>%
 #> Determining missing values for each statistic...
 #> Beginning calculation...
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/temporal_predictors_variables_cr_2020_10_11_01_27_07.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpAJcfQs/wizard_dir/temporal_predictors_variables_cr_2020_10_12_17_41_21.csv
 #> Joining, by = "id"
 #> Processing category: med...
 #> Allocating memory...
@@ -187,9 +181,9 @@ wf %>%
 #> Parallel processing is ENABLED.
 #> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: ----------------------------------------                         100% Progress: ------------------------------------------------------------     100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
+#>  Progress: -------------------------------------------                      100% Progress: --------------------------------------------------------------   100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/temporal_predictors_category_med_2020_10_11_01_27_28.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpAJcfQs/wizard_dir/temporal_predictors_category_med_2020_10_12_17_41_41.csv
 #> Joining, by = "id"
 #> Processing variables: cr...
 #> Allocating memory...
@@ -197,9 +191,9 @@ wf %>%
 #> Parallel processing is ENABLED.
 #> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: ---------------------------------------------                    100% Progress: --------------------------------------------------------------   100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
+#>  Progress: -------------------------------------------------                100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/temporal_outcomes_variables_cr_2020_10_11_01_27_48.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpAJcfQs/wizard_dir/temporal_outcomes_variables_cr_2020_10_12_17_42_00.csv
 ```
 
 ## Let’s combine our output into a single data frame
@@ -221,27 +215,34 @@ model_data = wiz_combine(wf, files = dir(file.path(tempdir(), 'wizard_dir'), pat
 #> Joining, by = "id"
 
 head(model_data)
-#>   id  sex      age  race baseline_cr          admit_time             dc_time time outcome_cr_max_24 med_acetaminophen_sum_168
-#> 1  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23    0          1.217020                         0
-#> 2  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23    6          1.217020                         0
-#> 3  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23   12          1.217020                         1
-#> 4  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23   18          1.179722                         1
-#> 5  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23   24          1.274939                         1
-#> 6  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23   30          1.274939                         1
-#>   med_aspirin_sum_168 med_diphenhydramine_sum_168 cr_length_06 cr_length_12 cr_max_06 cr_max_12 cr_mean_06 cr_mean_12
-#> 1                   0                           0            1            1  1.003659  1.030098   1.003659   1.030098
-#> 2                   0                           0            0            1  1.003659  1.003659   1.003659   1.003659
-#> 3                   0                           0            1            0  1.039322        NA   1.039322         NA
-#> 4                   0                           0            2            1  1.217020  1.039322   1.109985   1.039322
-#> 5                   0                           0            1            2  1.179722  1.217020   1.179722   1.109985
-#> 6                   0                           0            3            1  1.165989  1.179722   1.069630   1.179722
-#>   cr_median_06 cr_median_12 cr_min_06 cr_min_12 baseline_cr_min_2160
-#> 1     1.003659     1.030098 1.0036587  1.030098                   NA
-#> 2     1.003659     1.003659 1.0036587  1.003659                   NA
-#> 3     1.039322           NA 1.0393216        NA                   NA
-#> 4     1.109985     1.039322 1.0029506  1.039322                   NA
-#> 5     1.179722     1.109985 1.1797219  1.002951                   NA
-#> 6     1.096827     1.179722 0.9460735  1.179722                   NA
+#>   id  sex      age  race baseline_cr          admit_time             dc_time time
+#> 1  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23    0
+#> 2  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23    6
+#> 3  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23   12
+#> 4  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23   18
+#> 5  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23   24
+#> 6  1 male 66.15955 asian    1.001175 2019-06-02 00:49:23 2019-06-08 10:38:23   30
+#>   outcome_cr_max_24 med_acetaminophen_sum_168 med_aspirin_sum_168 med_diphenhydramine_sum_168
+#> 1          1.217020                         0                   0                           0
+#> 2          1.217020                         0                   0                           0
+#> 3          1.217020                         1                   0                           0
+#> 4          1.179722                         1                   0                           0
+#> 5          1.274939                         1                   0                           0
+#> 6          1.274939                         1                   0                           0
+#>   cr_length_06 cr_length_12 cr_max_06 cr_max_12 cr_mean_06 cr_mean_12 cr_median_06 cr_median_12
+#> 1            1            1  1.003659  1.030098   1.003659   1.030098     1.003659     1.030098
+#> 2            0            1  1.003659  1.003659   1.003659   1.003659     1.003659     1.003659
+#> 3            1            0  1.039322        NA   1.039322         NA     1.039322           NA
+#> 4            2            1  1.217020  1.039322   1.109985   1.039322     1.109985     1.039322
+#> 5            1            2  1.179722  1.217020   1.179722   1.109985     1.179722     1.109985
+#> 6            3            1  1.165989  1.179722   1.069630   1.179722     1.096827     1.179722
+#>   cr_min_06 cr_min_12 baseline_cr_min_2160
+#> 1 1.0036587  1.030098                   NA
+#> 2 1.0036587  1.003659                   NA
+#> 3 1.0393216        NA                   NA
+#> 4 1.0029506  1.039322                   NA
+#> 5 1.1797219  1.002951                   NA
+#> 6 0.9460735  1.179722                   NA
 ```
 
 ## Testing wiz\_frame without writing output to files
@@ -269,15 +270,22 @@ wf %>%
 #> Parallel processing is ENABLED.
 #> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: ---------------------------------------                          100% Progress: -----------------------------------------------------------      100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
+#>  Progress: ------------------------------------------                       100% Progress: --------------------------------------------------------------   100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
-#>   id time cr_length_06 cr_length_12 cr_max_06 cr_max_12 cr_mean_06 cr_mean_12 cr_median_06 cr_median_12 cr_min_06 cr_min_12
-#> 1  1    0            1            1  1.003659  1.030098   1.003659   1.030098     1.003659     1.030098 1.0036587  1.030098
-#> 2  1    6            0            1  1.003659  1.003659   1.003659   1.003659     1.003659     1.003659 1.0036587  1.003659
-#> 3  1   12            1            0  1.039322        NA   1.039322         NA     1.039322           NA 1.0393216        NA
-#> 4  1   18            2            1  1.217020  1.039322   1.109985   1.039322     1.109985     1.039322 1.0029506  1.039322
-#> 5  1   24            1            2  1.179722  1.217020   1.179722   1.109985     1.179722     1.109985 1.1797219  1.002951
-#> 6  1   30            3            1  1.165989  1.179722   1.069630   1.179722     1.096827     1.179722 0.9460735  1.179722
+#>   id time cr_length_06 cr_length_12 cr_max_06 cr_max_12 cr_mean_06 cr_mean_12 cr_median_06
+#> 1  1    0            1            1  1.003659  1.030098   1.003659   1.030098     1.003659
+#> 2  1    6            0            1  1.003659  1.003659   1.003659   1.003659     1.003659
+#> 3  1   12            1            0  1.039322        NA   1.039322         NA     1.039322
+#> 4  1   18            2            1  1.217020  1.039322   1.109985   1.039322     1.109985
+#> 5  1   24            1            2  1.179722  1.217020   1.179722   1.109985     1.179722
+#> 6  1   30            3            1  1.165989  1.179722   1.069630   1.179722     1.096827
+#>   cr_median_12 cr_min_06 cr_min_12
+#> 1     1.030098 1.0036587  1.030098
+#> 2     1.003659 1.0036587  1.003659
+#> 3           NA 1.0393216        NA
+#> 4     1.039322 1.0029506  1.039322
+#> 5     1.109985 1.1797219  1.002951
+#> 6     1.179722 0.9460735  1.179722
 ```
 
 ## You can also supply a vector of variables
@@ -296,7 +304,7 @@ wf %>%
 #> Parallel processing is ENABLED.
 #> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: -----------------------------------------                        100% Progress: ------------------------------------------------------------     100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
+#>  Progress: ------------------------------------------                       100% Progress: ------------------------------------------------------------     100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
 #>   id time cr_length_168 med_aspirin_length_168
 #> 1  1    0             2                      0
@@ -323,15 +331,22 @@ wf %>%
 #> Parallel processing is ENABLED.
 #> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: ----------------------------------------                         100% Progress: ----------------------------------------------------------       100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
+#>  Progress: ------------------------------------------                       100% Progress: ------------------------------------------------------------     100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
-#>   id time cr_length_12 med_acetaminophen_length_12 med_aspirin_length_12 med_diphenhydramine_length_12
-#> 1  1    0            2                           0                     0                             0
-#> 2  1    6            1                           0                     0                             0
-#> 3  1   12            1                           1                     0                             0
-#> 4  1   18            3                           1                     0                             0
-#> 5  1   24            3                           0                     0                             0
-#> 6  1   30            4                           0                     0                             0
+#>   id time cr_length_12 med_acetaminophen_length_12 med_aspirin_length_12
+#> 1  1    0            2                           0                     0
+#> 2  1    6            1                           0                     0
+#> 3  1   12            1                           1                     0
+#> 4  1   18            3                           1                     0
+#> 5  1   24            3                           0                     0
+#> 6  1   30            4                           0                     0
+#>   med_diphenhydramine_length_12
+#> 1                             0
+#> 2                             0
+#> 3                             0
+#> 4                             0
+#> 5                             0
+#> 6                             0
 ```
 
 ## Let’s benchmark the performance on our package
@@ -356,7 +371,7 @@ benchmark_results[['multisession']] =
                                    length = length)),
     times = 1
   )
-#>  Progress: -------------------------------------                            100% Progress: --------------------------------------------------------         100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
+#>  Progress: ---------------------------------------                          100% Progress: -----------------------------------------------------------      100% Progress: ---------------------------------------------------------------  100% Progress: ---------------------------------------------------------------- 100%
 ```
 
 ### Running in parallel with a batch\_size of 20
@@ -389,7 +404,7 @@ benchmark_results[['multisession with batch_size 20']] =
 #> Beginning calculation...
 #>  Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/chunk_1_temporal_predictors_variables_cr_2020_10_11_01_29_41.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpAJcfQs/wizard_dir/chunk_1_temporal_predictors_variables_cr_2020_10_12_17_43_49.csv
 #> Processing chunk # 2 out of 5...
 #> Joining, by = "id"
 #> Processing variables: cr...
@@ -400,7 +415,7 @@ benchmark_results[['multisession with batch_size 20']] =
 #> Beginning calculation...
 #>  Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/chunk_2_temporal_predictors_variables_cr_2020_10_11_01_29_46.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpAJcfQs/wizard_dir/chunk_2_temporal_predictors_variables_cr_2020_10_12_17_43_54.csv
 #> Processing chunk # 3 out of 5...
 #> Joining, by = "id"
 #> Processing variables: cr...
@@ -411,7 +426,7 @@ benchmark_results[['multisession with batch_size 20']] =
 #> Beginning calculation...
 #>  Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/chunk_3_temporal_predictors_variables_cr_2020_10_11_01_29_52.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpAJcfQs/wizard_dir/chunk_3_temporal_predictors_variables_cr_2020_10_12_17_44_00.csv
 #> Processing chunk # 4 out of 5...
 #> Joining, by = "id"
 #> Processing variables: cr...
@@ -420,9 +435,9 @@ benchmark_results[['multisession with batch_size 20']] =
 #> Parallel processing is ENABLED.
 #> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: --------------------------------------------------------------   100% Progress: ---------------------------------------------------------------- 100%
+#>  Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/chunk_4_temporal_predictors_variables_cr_2020_10_11_01_29_58.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpAJcfQs/wizard_dir/chunk_4_temporal_predictors_variables_cr_2020_10_12_17_44_06.csv
 #> Processing chunk # 5 out of 5...
 #> Joining, by = "id"
 #> Processing variables: cr...
@@ -433,7 +448,7 @@ benchmark_results[['multisession with batch_size 20']] =
 #> Beginning calculation...
 #>  Progress: ---------------------------------------------------------------- 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpUnwllv/wizard_dir/chunk_5_temporal_predictors_variables_cr_2020_10_11_01_30_03.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\2\RtmpAJcfQs/wizard_dir/chunk_5_temporal_predictors_variables_cr_2020_10_12_17_44_12.csv
 ```
 
 ### Running in serial
@@ -466,19 +481,19 @@ benchmark_results
 #>                                                                                                                                                                               expr
 #>  wf %>% wiz_add_predictors(variable = "cr", lookback = hours(48),      window = hours(6), stats = c(mean = mean, min = min, max = max,          median = median, length = length))
 #>       min       lq     mean   median       uq      max neval
-#>  23.88308 23.88308 23.88308 23.88308 23.88308 23.88308     1
+#>  22.38963 22.38963 22.38963 22.38963 22.38963 22.38963     1
 #> 
 #> $`multisession with batch_size 20`
 #> Unit: seconds
 #>                                                                                                                                                                                           expr
 #>  wf_with_chunks %>% wiz_add_predictors(variable = "cr", lookback = hours(48),      window = hours(6), stats = c(mean = mean, min = min, max = max,          median = median, length = length))
-#>       min       lq     mean   median       uq      max neval
-#>  26.53323 26.53323 26.53323 26.53323 26.53323 26.53323     1
+#>      min      lq    mean  median      uq     max neval
+#>  26.7992 26.7992 26.7992 26.7992 26.7992 26.7992     1
 #> 
 #> $sequential
 #> Unit: seconds
 #>                                                                                                                                                                               expr
 #>  wf %>% wiz_add_predictors(variable = "cr", lookback = hours(48),      window = hours(6), stats = c(mean = mean, min = min, max = max,          median = median, length = length))
 #>       min       lq     mean   median       uq      max neval
-#>  203.6584 203.6584 203.6584 203.6584 203.6584 203.6584     1
+#>  200.8695 200.8695 200.8695 200.8695 200.8695 200.8695     1
 ```

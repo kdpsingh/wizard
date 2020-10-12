@@ -78,7 +78,7 @@ wf$fixed_data_dict
 wf$temporal_data_dict
 ```
 
-## Let's dummy-code the temporal categorical variables
+## Let's dummy code the temporal categorical variables
 
 
 ```{r}

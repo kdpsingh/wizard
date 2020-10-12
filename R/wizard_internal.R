@@ -397,7 +397,7 @@ wiz_add_predictors_internal = function(wiz_frame = NULL,
               output_item,
               missing_value_frame
             ) %>%
-            dplyr::mutate(wiz_value = dplyr::coalesce(wiz_value, wiz_missing_value)) %>%
+            dplyr::mutate(wiz_value = ifelse(is.na(wiz_value), wiz_missing_value, wiz_value)) %>%
             dplyr::select(-wiz_missing_value) %>%
             dplyr::mutate(wiz_value = dplyr::na_if(wiz_value, -Inf)) %>%
             dplyr::mutate(wiz_value = dplyr::na_if(wiz_value, Inf))
