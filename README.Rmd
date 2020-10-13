@@ -78,7 +78,7 @@ wf$fixed_data_dict
 wf$temporal_data_dict
 ```
 
-## Let's dummy code the temporal categorical variables
+## Let's dummy           code the temporal categorical variables
 
 
 ```{r}
@@ -183,7 +183,7 @@ wf %>%
 ```{r message=FALSE}
 benchmark_results = list()
 
-future::plan('multisession')
+# future::plan('multisession')
 
 benchmark_results[['multisession']] = 
   microbenchmark::microbenchmark(
@@ -218,6 +218,26 @@ benchmark_results[['multisession with batch_size 20']] =
                                    max = max,
                                    median = median,
                                    length = length)),
+    times = 1
+  )
+```
+
+### Running in parallel with streaming (experimental)
+
+```{r message=FALSE}
+# future::plan('multisession')
+
+benchmark_results[['multisession streaming']] = 
+  microbenchmark::microbenchmark(
+    wf %>% 
+      wiz_add_predictors_streaming(variable = 'cr',
+                                   lookback = hours(48), 
+                                   window = hours(6), 
+                                   stats = c(mean = mean,
+                                             min = min,
+                                             max = max,
+                                             median = median,
+                                             length = length)),
     times = 1
   )
 ```
