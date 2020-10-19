@@ -2,17 +2,18 @@
 #' before fixed_start.
 #' @export
 wiz_add_predictors = function(wiz_frame = NULL,
-                                       variables = NULL,
-                                       category = NULL,
-                                       lookback = hours(48),
-                                       window = lookback,
-                                       stats = c(mean = mean,
-                                                 min = min,
-                                                 max = max),
-                                       impute = TRUE,
-                                       output_file = TRUE,
-                                       log_file = TRUE,
-                                       check_size_only = FALSE) {
+                              variables = NULL,
+                              category = NULL,
+                              lookback = hours(48),
+                              window = lookback,
+                              stats = c(mean = mean,
+                                        min = min,
+                                        max = max),
+                              impute = TRUE,
+                              output_file = TRUE,
+                              log_file = TRUE,
+                              check_size_only = FALSE,
+                              last_chunk_completed = NULL) {
 
   if (is.null(wiz_frame$batch_size)) {
     wiz_add_predictors_internal(wiz_frame = wiz_frame,
@@ -35,6 +36,15 @@ wiz_add_predictors = function(wiz_frame = NULL,
     n_chunks = max(unique_chunks)
 
     for (chunk_num in unique_chunks) {
+      if (!is.null(last_chunk_completed) && chunk_num <= last_chunk_completed) {
+        message(paste0('Skipping chunk # ', chunk_num, ' out of ', n_chunks, '...'))
+        if (log_file) {
+          write(paste0(Sys.time(), ': Skipping chunk # ', chunk_num, ' out of ', n_chunks, '...'),
+                file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
+        }
+        next
+      }
+
       message(paste0('Processing chunk # ', chunk_num, ' out of ', n_chunks, '...'))
       if (log_file) {
         write(paste0(Sys.time(), ': Processing chunk # ', chunk_num, ' out of ', n_chunks, '...'),
@@ -91,7 +101,8 @@ wiz_add_baseline_predictors = function(wiz_frame = NULL,
                                        impute = TRUE,
                                        output_file = TRUE,
                                        log_file = TRUE,
-                                       check_size_only = FALSE) {
+                                       check_size_only = FALSE,
+                                       last_chunk_completed = NULL) {
 
   if (is.null(wiz_frame$batch_size)) {
     wiz_add_predictors_internal(wiz_frame = wiz_frame,
@@ -116,6 +127,15 @@ wiz_add_baseline_predictors = function(wiz_frame = NULL,
     n_chunks = max(unique_chunks)
 
     for (chunk_num in unique_chunks) {
+      if (!is.null(last_chunk_completed) && chunk_num <= last_chunk_completed) {
+        message(paste0('Skipping chunk # ', chunk_num, ' out of ', n_chunks, '...'))
+        if (log_file) {
+          write(paste0(Sys.time(), ': Skipping chunk # ', chunk_num, ' out of ', n_chunks, '...'),
+                file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
+        }
+        next
+      }
+
       message(paste0('Processing chunk # ', chunk_num, ' out of ', n_chunks, '...'))
       if (log_file) {
         write(paste0(Sys.time(), ': Processing chunk # ', chunk_num, ' out of ', n_chunks, '...'),
