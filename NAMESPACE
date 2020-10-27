@@ -2,6 +2,7 @@
 
 export("%>%")
 export(wiz_add_baseline_predictors)
+export(wiz_add_growing_predictors)
 export(wiz_add_outcomes)
 export(wiz_add_predictors)
 export(wiz_add_predictors_streaming)

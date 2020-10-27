@@ -36,9 +36,9 @@ mtsamples$transcription[[1]]
 ## Let's combine the text from all of the notes into one string
 
 ```{r}
-dataset = data.frame(id = 1:500, 
+dataset = data.frame(id = 1:nrow(mtsamples), # 1:500, 
                      variable = 'variable',
-                     text = mtsamples$transcription[1:500], 
+                     text = mtsamples$transcription, # [1:500], 
                      stringsAsFactors = FALSE)
 
 dataset = 
@@ -63,26 +63,59 @@ char_frame = wiz_frame(fixed_data = dataset %>% distinct(id),
                        temporal_value = 'char',
                        step = 2,
                        max_length = 20,
-                       output_folder = 'Z:/kdpsingh/wiz_char_lang')
+                       output_folder = 'Z:/kdpsingh/wiz_char_lang', 
+                       save_wiz_frame = FALSE)
 ```
+
+## Let's generate a wiz_frame (for fun)
+
+```{r}
+char_frame = wiz_frame(fixed_data = dataset %>% distinct(id), 
+                       temporal_data = dataset,
+                       fixed_id = 'id',
+                       temporal_id = 'id',
+                       temporal_time = 'sequence_num',
+                       temporal_variable = 'variable',
+                       temporal_value = 'char',
+                       step = 1,
+                       output_folder = 'Z:/kdpsingh/wiz_char_lang/all_data_in_chunks',
+                       create_folder = TRUE,
+                       batch_size = 16)
+```
+
+
 
 ## Let's generate a dataset that will predict the next letter using the last 5 letters
 
 ```{r}
-future::plan('multisession')
+future::plan('multisession', workers = 6)
 
-model_predictors = char_frame %>% 
-  wiz_add_predictors(variables = 'variable', 
-                     lookback = 5,
-                     window = 1, 
+model_predictors = char_frame %>%
+  wiz_add_predictors(variables = 'variable',
+                     lookback = 20,
+                     window = 1,
                      stats = c(first = . %>% .[1]),
                      output_file = FALSE)
 
-model_predictors_ngram = char_frame %>% 
-  wiz_add_predictors(variables = 'variable', 
-                     lookback = 3,
+
+model_predictors = char_frame %>%
+  wiz_add_growing_predictors(variables = 'variable',
                      stats = c(ngram = . %>% paste(collapse = '')),
                      output_file = FALSE)
+
+
+char_frame %>% 
+  wiz_add_predictors(variables = 'variable', 
+                     lookback = 50,
+                     window = 1, 
+                     stats = c(first = . %>% .[1]),
+                     last_chunk_completed = 17)
+
+# model_predictors_ngram = char_frame %>%
+#   wiz_add_predictors(variables = 'variable',
+#                      lookback = 3,
+#                      stats = c(ngram = . %>% paste(collapse = '')),
+#                      output_file = FALSE)
 
 
 model_outcome = char_frame %>% 
@@ -91,11 +124,11 @@ model_outcome = char_frame %>%
                    stats = c(first = . %>% .[1]),
                    output_file = FALSE)
 
-model_outcome_ngram = char_frame %>% 
-  wiz_add_outcomes(variables = 'variable', 
-                   lookahead = 1,
-                   stats = c(ngram = . %>% paste(collapse = '')),
-                   output_file = FALSE)
+# model_outcome_ngram = char_frame %>% 
+#   wiz_add_outcomes(variables = 'variable', 
+#                    lookahead = 1,
+#                    stats = c(ngram = . %>% paste(collapse = '')),
+#                    output_file = FALSE)
 ```
 
 ## Combine the datasets

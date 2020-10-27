@@ -15,7 +15,8 @@ wiz_add_predictors(
   impute = TRUE,
   output_file = TRUE,
   log_file = TRUE,
-  check_size_only = FALSE
+  check_size_only = FALSE,
+  last_chunk_completed = NULL
 )
 }
 \description{

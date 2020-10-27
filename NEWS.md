@@ -37,3 +37,9 @@
 * Moved implicit missingness and LOCF imputation into the parallel jobs to reduce memory footprint after row-binding parallel jobs
 * Bug fix to error introduced in wizard 0.0.0.9004 resulting extra time steps for individuals during "handling implicit missingness" step.
 * Note: wiz_combine() does not support batches yet but will in a subsequent version.
+
+# wizard 0.0.0.9006 (2020-10-27)
+* Added wiz_add_growing_predictors() for building cumulatively growing windows beginning at time zero
+* Changed `batch_size` parameter to `chunk_size` in `wiz_frame()`
+* Changed names of files to indicate `baseline`, `growing`, or `rolling` to indicate the type of variables contained within it.
+* Made some changes to the `character_language_model.Rmd` vignette to generate a large rolling dataset and test the `growing` window functionality. This vignette needs to be cleaned up for educational use.

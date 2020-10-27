@@ -14,7 +14,7 @@ wiz_add_outcomes = function(wiz_frame = NULL,
                             check_size_only = FALSE,
                             last_chunk_completed = NULL) {
 
-  if (is.null(wiz_frame$batch_size)) {
+  if (is.null(wiz_frame$chunk_size)) {
     wiz_add_predictors_internal(wiz_frame = wiz_frame,
                                 variables = variables,
                                 category = category,
@@ -26,11 +26,11 @@ wiz_add_outcomes = function(wiz_frame = NULL,
                                 log_file = log_file,
                                 check_size_only = check_size_only)
   } else {
-    assertthat::assert_that(wiz_frame$batch_size > 0)
+    assertthat::assert_that(wiz_frame$chunk_size > 0)
 
     # Make chunks based on temporal data, not fixed data
     unique_temporal_ids = sort(unique(wiz_frame$temporal_data[[wiz_frame$temporal_id]]))
-    chunk_ids = ceiling(seq_len(length(unique_temporal_ids)) / wiz_frame$batch_size)
+    chunk_ids = ceiling(seq_len(length(unique_temporal_ids)) / wiz_frame$chunk_size)
     unique_chunks = unique(chunk_ids)
     n_chunks = max(unique_chunks)
 

@@ -115,6 +115,8 @@ wf %>%
                               lookback = days(90),
                               offset = hours(10),
                               stats = c(min = min)) %>%
+  wiz_add_growing_predictors(variables = 'cr', # cumulative max creatinine since admission
+                              stats = c(max = max)) %>%
   wiz_add_predictors(category = 'med', # Note: category is always a regular expression 
                      lookback = days(7),
                      stats = c(sum = sum)) %>% 
@@ -200,14 +202,14 @@ benchmark_results[['multisession']] =
   )
 ```
 
-### Running in parallel with a batch_size of 20
+### Running in parallel with a chunk_size of 20
 
 ```{r}
 
 wf_with_chunks = wf
-wf_with_chunks$batch_size = 20
+wf_with_chunks$chunk_size = 20
 
-benchmark_results[['multisession with batch_size 20']] = 
+benchmark_results[['multisession with chunk_size 20']] = 
   microbenchmark::microbenchmark(
     wf_with_chunks %>% 
       wiz_add_predictors(variable = 'cr',

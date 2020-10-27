@@ -58,8 +58,8 @@ wiz_add_predictors_internal = function(wiz_frame = NULL,
                               ...) {
   dots = list(...)
 
-  if (!is.null(wiz_frame$batch_size) && !output_file) {
-    stop('If you set a batch_size, then output_file must be set to TRUE.')
+  if (!is.null(wiz_frame$chunk_size) && !output_file) {
+    stop('If you set a chunk_size, then output_file must be set to TRUE.')
   }
 
   if (is.null(variables) && is.null(category)) {
@@ -110,17 +110,19 @@ wiz_add_predictors_internal = function(wiz_frame = NULL,
     stop ('The lookback must be divisible by the window (with no remainder).')
   }
 
-  temporal_data_of_interest =
-    wiz_frame$temporal_data %>%
-    dplyr::group_by(!!rlang::parse_expr(wiz_frame$temporal_id)) %>%
-    dplyr::mutate(wiz_step_time =
-                    !!rlang::parse_expr(wiz_frame$temporal_time) %/%
-                    wiz_frame$step *
-                    wiz_frame$step +
-                    wiz_frame$step) %>%
-    dplyr::mutate(wiz_lookback_time =
-                    wiz_step_time - lookback_converted) %>%
-    dplyr::ungroup()
+  temporal_data_of_interest = wiz_frame$temporal_data
+
+  # temporal_data_of_interest =
+  #   wiz_frame$temporal_data %>%
+  #   dplyr::group_by(!!rlang::parse_expr(wiz_frame$temporal_id)) %>%
+  #   dplyr::mutate(wiz_step_time =
+  #                   !!rlang::parse_expr(wiz_frame$temporal_time) %/%
+  #                   wiz_frame$step *
+  #                   wiz_frame$step +
+  #                   wiz_frame$step) %>%
+  #   dplyr::mutate(wiz_lookback_time =
+  #                   wiz_step_time - lookback_converted) %>%
+  #   dplyr::ungroup()
 
 
   # fixed_end and fixed_start should *always* be available now because they are now created if not provided
@@ -338,22 +340,39 @@ wiz_add_predictors_internal = function(wiz_frame = NULL,
             dplyr::mutate(window_time = abs(ceiling((groups$time[1] - !!rlang::parse_expr(temporal_time)) /
                                                       window_converted) * window_converted))
         } else { # if it is a lookback
-          output_item =
-            temporal_data_of_interest %>%
-            dplyr::filter(!!rlang::parse_expr(temporal_id) == groups[[temporal_id]][1] &
-                            !!rlang::parse_expr(temporal_time) <= groups$time[1] & # includes now in predictors
-                            !!rlang::parse_expr(temporal_time) > groups$time[1] - lookback_converted) # up to X hours ago but not including X
-          output_item = output_item %>%
-            dplyr::mutate(window_time = floor((groups$time[1] - !!rlang::parse_expr(temporal_time)) /
-                                                window_converted) * window_converted + window_converted)
+          if (!is.null(dots[['growing']]) && dots[['growing']]) {
+            output_item =
+              temporal_data_of_interest %>%
+              dplyr::filter(!!rlang::parse_expr(temporal_id) == groups[[temporal_id]][1] &
+                              !!rlang::parse_expr(temporal_time) <= groups$time[1] & # includes now in predictors
+                              !!rlang::parse_expr(temporal_time) >= 0) # Includes time 0
+            output_item = output_item %>%
+              dplyr::mutate(window_time = 48) # arbitrary, will ignore
+          } else {
+            output_item =
+              temporal_data_of_interest %>%
+              dplyr::filter(!!rlang::parse_expr(temporal_id) == groups[[temporal_id]][1] &
+                              !!rlang::parse_expr(temporal_time) <= groups$time[1] & # includes now in predictors
+                              !!rlang::parse_expr(temporal_time) > groups$time[1] - lookback_converted) # up to X hours ago but not including X
+            output_item = output_item %>%
+              dplyr::mutate(window_time = floor((groups$time[1] - !!rlang::parse_expr(temporal_time)) /
+                                                  window_converted) * window_converted + window_converted)
+          }
         }
 
-        output_item = output_item %>%
-          dplyr::mutate(window_time = factor(window_time,
-                                             levels = abs(1:(lookback_converted/window_converted)*window_converted))) %>%
+        # If it's *not* a growing predictor, then convert the window to a factor variable
+        if (is.null(dots[['growing']]) || !dots[['growing']]) {
+          output_item = output_item %>%
+            dplyr::mutate(window_time = factor(window_time,
+                                               levels = abs(1:(lookback_converted/window_converted)*window_converted)))
+        }
+
+        # convert temporal_variable to a factor variable, which is useful
+        # to fill in missing values
+        output_item =
+          output_item %>%
           dplyr::mutate(!!rlang::parse_expr(temporal_variable) :=
                           factor(!!rlang::parse_expr(temporal_variable), levels = all_temporal_vars))
-
 
         # If there are *no* values returned
         if (nrow(output_item) == 0) {
@@ -435,17 +454,23 @@ wiz_add_predictors_internal = function(wiz_frame = NULL,
             dplyr::select(-window_time)
         } else { # if it is a lookback
 
-          if (is.null(dots[['baseline']]) || !dots[['baseline']]) {
+          if (!is.null(dots[['baseline']]) && dots[['baseline']]) {
             output_item =
               output_item %>%
-              dplyr::mutate(wiz_variable = paste0(wiz_variable, '_',
+              dplyr::mutate(wiz_variable = paste0('baseline_', wiz_variable, '_',
                                                   stringr::str_pad(abs(window_time),
                                                                    nchar(abs(lookback_converted)), pad = '0'))) %>%
+              dplyr::select(-window_time)
+
+          } else if (!is.null(dots[['growing']]) && dots[['growing']]){
+            output_item =
+              output_item %>%
+              dplyr::mutate(wiz_variable = paste0('growing_', wiz_variable)) %>%
               dplyr::select(-window_time)
           } else {
             output_item =
               output_item %>%
-              dplyr::mutate(wiz_variable = paste0('baseline_', wiz_variable, '_',
+              dplyr::mutate(wiz_variable = paste0(wiz_variable, '_',
                                                   stringr::str_pad(abs(window_time),
                                                                    nchar(abs(lookback_converted)), pad = '0'))) %>%
               dplyr::select(-window_time)
@@ -482,14 +507,22 @@ wiz_add_predictors_internal = function(wiz_frame = NULL,
     file_type = '_predictors_'
   }
 
+  if (!is.null(dots[['baseline']]) && dots[['baseline']]) {
+    file_type = paste0('baseline', file_type)
+  } else if (!is.null(dots[['growing']]) && dots[['growing']]) {
+    file_type = paste0('growing', file_type)
+  } else {
+    file_type = paste0('rolling', file_type)
+  }
+
   output_file_name = if (!is.null(category)) {
     file.path(wiz_frame$output_folder,
-              paste0(filename_prefix, 'temporal', file_type, '_category_', category, '_', lubridate::now()) %>%
+              paste0(filename_prefix, file_type, '_category_', category, '_', lubridate::now()) %>%
                 janitor::make_clean_names() %>%
                 paste0('.csv'))
   } else {
     file.path(wiz_frame$output_folder,
-              paste0(filename_prefix, 'temporal',  file_type, '_variables_', paste0(variables, collapse = '_'),
+              paste0(filename_prefix, file_type, '_variables_', paste0(variables, collapse = '_'),
                      '_', lubridate::now()) %>%
                 janitor::make_clean_names() %>%
                 paste0('.csv'))
@@ -528,8 +561,8 @@ wiz_add_predictors_internal_streaming = function(wiz_frame = NULL,
                                                  ...) {
   dots = list(...)
 
-  if (!is.null(wiz_frame$batch_size) && !output_file) {
-    stop('If you set a batch_size, then output_file must be set to TRUE.')
+  if (!is.null(wiz_frame$chunk_size) && !output_file) {
+    stop('If you set a chunk_size, then output_file must be set to TRUE.')
   }
 
   if (is.null(variables) && is.null(category)) {
