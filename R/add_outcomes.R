@@ -62,7 +62,7 @@ wiz_add_outcomes = function(wiz_frame = NULL,
         dplyr::filter(!!rlang::parse_expr(wiz_frame_chunk$fixed_id) %in%
                         wiz_frame_chunk$temporal_data[[wiz_frame_chunk$temporal_id]])
 
-      wiz_add_predictors_internal(wiz_frame = wiz_frame,
+      wiz_add_predictors_internal(wiz_frame = wiz_frame_chunk,
                                   variables = variables,
                                   category = category,
                                   lookback = -lookahead,
