@@ -127,12 +127,12 @@ wf %>%
 
 ## Let's combine our output into a single data frame
 
-You can either provide `wiz_combine()` with a set of data frames or files separated by commas. Or, now you can provide a vector of file names using the `files` argument.
+You can provide `wiz_combine()` with a set of data frames separated by commas. Or, now you can provide a vector of file names using the `files` argument. If you leave `files` blank, it will automatically find all the `.csv` files from the `output_folder` of your `wiz_frame`.
 
 This resulting frame is essentially ready for modeling (using `tidymodels`, for example). Make sure to keep individual patients in the same fold if you divide this dataset into multiple folds.
 
 ```{r}
-model_data = wiz_combine(wf, files = dir(file.path(tempdir(), 'wizard_dir'), pattern = '*.csv'))
+model_data = wiz_combine(wf)
 
 head(model_data)
 ```
@@ -224,27 +224,6 @@ benchmark_results[['multisession with chunk_size 20']] =
   )
 ```
 
-### Running in parallel with streaming (experimental)
-
-```{r message=FALSE}
-# future::plan('multisession')
-
-benchmark_results[['multisession streaming']] = 
-  microbenchmark::microbenchmark(
-    wf %>% 
-      wiz_add_predictors_streaming(variable = 'cr',
-                                   lookback = hours(48), 
-                                   window = hours(6), 
-                                   stats = c(mean = mean,
-                                             min = min,
-                                             max = max,
-                                             median = median,
-                                             length = length)),
-    times = 1
-  )
-```
-
-
 ### Running in serial
 
 ```{r message=FALSE}
@@ -269,7 +248,6 @@ benchmark_results[['sequential']] =
 ## Benchmark results
 
 ```{r}
-
 benchmark_results
 ```
 

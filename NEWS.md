@@ -43,3 +43,7 @@
 * Changed `batch_size` parameter to `chunk_size` in `wiz_frame()`
 * Changed names of files to indicate `baseline`, `growing`, or `rolling` to indicate the type of variables contained within it.
 * Made some changes to the `character_language_model.Rmd` vignette to generate a large rolling dataset and test the `growing` window functionality. This vignette needs to be cleaned up for educational use.
+
+# wizard 0.0.0.9007 (2020-11-09)
+* Updated `wiz_combine()` to support chunked files and changed interface so that supplying a vector of files is optional.
+* Removed `wiz_add_predictors_streaming` functions

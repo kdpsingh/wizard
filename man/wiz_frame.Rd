@@ -20,7 +20,7 @@ wiz_frame(
   output_folder = NULL,
   create_folder = FALSE,
   save_wiz_frame = TRUE,
-  batch_size = NULL,
+  chunk_size = NULL,
   numeric_threshold = 0.5
 )
 }
