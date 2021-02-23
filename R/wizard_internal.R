@@ -45,7 +45,7 @@ wiz_define_steps = function(groups, temporal_id, step, step_units, max_length, b
 wiz_add_predictors_internal = function(wiz_frame = NULL,
                               variables = NULL,
                               category = NULL,
-                              lookback = hours(48),
+                              lookback = lubridate::hours(48),
                               window = lookback,
                               stats = c(mean = mean,
                                         min = min,
@@ -149,6 +149,23 @@ wiz_add_predictors_internal = function(wiz_frame = NULL,
       dplyr::select(!!rlang::parse_expr(wiz_frame$temporal_id), wiz_step_time)
   }
 
+
+  # Check to see if there is any data in the max_step_times_per_id
+  if (nrow(max_step_times_per_id) == 0) {
+    message('No values found for the selected variable(s) during the time period.')
+    if (log_file) {
+      write(paste0(Sys.time(), ': No values found for the selected variable(s) during the time period.'),
+            file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
+    }
+
+    if (output_file == TRUE) {
+      return(invisible(wiz_frame))
+    }
+
+    return(NULL)
+  }
+
+  # Filter temporal_data_of_interest to only the variables of interest
   if (!is.null(variables)) {
     temporal_data_of_interest =
       temporal_data_of_interest %>%
@@ -182,6 +199,22 @@ wiz_add_predictors_internal = function(wiz_frame = NULL,
     temporal_data_of_interest[[wiz_frame$temporal_value]] =
       as.character(temporal_data_of_interest[[wiz_frame$temporal_value]])
   }
+
+  # Check to see if there is any data in the period of interest
+  if (nrow(temporal_data_of_interest) == 0) {
+    message('No values found for the selected variable(s) during the time period.')
+    if (log_file) {
+      write(paste0(Sys.time(), ': No values found for the selected variable(s) during the time period.'),
+            file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
+    }
+
+    if (output_file == TRUE) {
+      return(invisible(wiz_frame))
+    }
+
+    return(NULL)
+  }
+
 
   # Test to make sure all stats are calculable
   for (stat in stats) {
@@ -220,11 +253,16 @@ wiz_add_predictors_internal = function(wiz_frame = NULL,
   #         file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
   # }
 
+
   message('Allocating memory...')
   if (log_file) {
     write(paste0(Sys.time(), ': Allocating memory...'),
           file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
   }
+
+  max_step_times_per_id <<- max_step_times_per_id
+  temporal_data_of_interest <<- temporal_data_of_interest
+
 
   output_frame =
     dplyr::tibble(!!rlang::parse_expr(wiz_frame$temporal_id) :=

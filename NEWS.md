@@ -47,3 +47,7 @@
 # wizard 0.0.0.9007 (2020-11-09)
 * Updated `wiz_combine()` to support chunked files and changed interface so that supplying a vector of files is optional.
 * Removed `wiz_add_predictors_streaming` functions
+
+# wizard 0.1.0 (2021-02-22)
+* Fixed bug with the temporal_data_of_interest being empty due to highly sparse variables
+* Also added check for max_step_times_per_id being empty (though this should not occur)

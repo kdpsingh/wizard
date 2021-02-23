@@ -35,7 +35,7 @@ remotes::install_github('ML4LHS/wizard')
 
 Start by loading and package and defining your `wiz_frame()`. A `wiz_frame` is simply a list with the class `wiz_frame` and contains all the key information needed to describe both your fixed dataset (such as demographics, one row per patient) and your temporal dataset (one row per observation linked to a timestamp).
 
-```{r eval=FALSE}
+```{r}
 library(wizard)
 ```
 

@@ -3,7 +3,7 @@
 wiz_add_outcomes = function(wiz_frame = NULL,
                             variables = NULL,
                             category = NULL,
-                            lookahead = hours(48),
+                            lookahead = lubridate::hours(48),
                             window = lookahead,
                             stats = c(mean = mean,
                                       min = min,

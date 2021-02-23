@@ -1,7 +1,7 @@
 Package: wizard
 Type: Package
 Title: Windowed Summarization for Autoregressive Data
-Version: 0.0.0.9006
+Version: 0.1.0
 Author: Karandeep Singh
 Maintainer: Karandeep Singh <kdpsingh@umich.edu>
 Description: This package uses windowed summarization to convert time series data 
