@@ -172,9 +172,9 @@ wf %>%
 #> Parallel processing is ENABLED.
 #> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: --------------------------------------------------------------------------------                                                                 100% Progress: -------------------------------------------------------------------------------------------------------------------------                        100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------       100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
+#>  Progress: ---------------------------------------------------------------------------------------                                                          100% Progress: -----------------------------------------------------------------------------------------------------------------------------                    100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------------   100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------------   100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpEh3Ady/wizard_dir/rolling_predictors_variables_cr_2021_02_22_20_29_09.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpeMx3hc/wizard_dir/rolling_predictors_variables_cr_2021_02_22_21_38_15.csv
 #> Joining, by = "id"
 #> Processing variables: cr...
 #> Allocating memory...
@@ -182,8 +182,9 @@ wf %>%
 #> Parallel processing is ENABLED.
 #> Determining missing values for each statistic...
 #> Beginning calculation...
+#>  Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpEh3Ady/wizard_dir/baseline_predictors_variables_cr_2021_02_22_20_29_13.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpeMx3hc/wizard_dir/baseline_predictors_variables_cr_2021_02_22_21_38_17.csv
 #> Joining, by = "id"
 #> Processing variables: cr...
 #> Allocating memory...
@@ -191,9 +192,9 @@ wf %>%
 #> Parallel processing is ENABLED.
 #> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: --------------------------------------------------------------------------------------------------------------------------                       100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------------   100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
+#>  Progress: ----------------------------------------------------------------------------------------------------------------                                 100% Progress: -----------------------------------------------------------------------------------------------------------------------------------------------  100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpEh3Ady/wizard_dir/growing_predictors_variables_cr_2021_02_22_20_29_31.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpeMx3hc/wizard_dir/growing_predictors_variables_cr_2021_02_22_21_38_34.csv
 #> Joining, by = "id"
 #> Processing category: med...
 #> Allocating memory...
@@ -201,9 +202,9 @@ wf %>%
 #> Parallel processing is ENABLED.
 #> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: -------------------------------------------------------------------------------------------------                                                100% Progress: -------------------------------------------------------------------------------------------------------------------------------------------      100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------------   100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
+#>  Progress: ---------------------------------------------------------------------------------------------                                                    100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------         100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------------   100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpEh3Ady/wizard_dir/rolling_predictors_category_med_2021_02_22_20_29_52.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpeMx3hc/wizard_dir/rolling_predictors_category_med_2021_02_22_21_38_53.csv
 #> Joining, by = "id"
 #> Processing variables: cr...
 #> Allocating memory...
@@ -211,9 +212,9 @@ wf %>%
 #> Parallel processing is ENABLED.
 #> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: --------------------------------------------------------------------------------------------------------------                                   100% Progress: ---------------------------------------------------------------------------------------------------------------------------------------------    100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
+#>  Progress: ----------------------------------------------------------------------------------------------------                                             100% Progress: -------------------------------------------------------------------------------------------------------------------------------------------      100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------------   100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpEh3Ady/wizard_dir/rolling_outcomes_variables_cr_2021_02_22_20_30_12.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpeMx3hc/wizard_dir/rolling_outcomes_variables_cr_2021_02_22_21_39_12.csv
 ```
 
 ## Let’s combine our output into a single data frame
@@ -229,11 +230,11 @@ same fold if you divide this dataset into multiple folds.
 
 ``` r
 model_data = wiz_combine(wf)
-#> Reading file: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpEh3Ady/wizard_dir/baseline_predictors_variables_cr_2021_02_22_20_29_13.csv...
-#> Reading file: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpEh3Ady/wizard_dir/growing_predictors_variables_cr_2021_02_22_20_29_31.csv...
-#> Reading file: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpEh3Ady/wizard_dir/rolling_outcomes_variables_cr_2021_02_22_20_30_12.csv...
-#> Reading file: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpEh3Ady/wizard_dir/rolling_predictors_category_med_2021_02_22_20_29_52.csv...
-#> Reading file: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpEh3Ady/wizard_dir/rolling_predictors_variables_cr_2021_02_22_20_29_09.csv...
+#> Reading file: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpeMx3hc/wizard_dir/baseline_predictors_variables_cr_2021_02_22_21_38_17.csv...
+#> Reading file: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpeMx3hc/wizard_dir/growing_predictors_variables_cr_2021_02_22_21_38_34.csv...
+#> Reading file: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpeMx3hc/wizard_dir/rolling_outcomes_variables_cr_2021_02_22_21_39_12.csv...
+#> Reading file: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpeMx3hc/wizard_dir/rolling_predictors_category_med_2021_02_22_21_38_53.csv...
+#> Reading file: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpeMx3hc/wizard_dir/rolling_predictors_variables_cr_2021_02_22_21_38_15.csv...
 #> Joining, by = "id"
 #> Joining, by = "id"
 #> Joining, by = c("id", "time")
@@ -303,7 +304,7 @@ wf %>%
 #> Parallel processing is ENABLED.
 #> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: --------------------------------------------------------------------------------------------------                                               100% Progress: -------------------------------------------------------------------------------------------------------------------------------------------      100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------------   100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
+#>  Progress: ------------------------------------------------------------------------------------------                                                       100% Progress: -------------------------------------------------------------------------------------------------------------------------------------            100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------------   100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
 #> Completed calculation.
 #>   id time cr_length_06 cr_length_12 cr_max_06 cr_max_12 cr_mean_06 cr_mean_12
 #> 1  1    0            1            1  1.003659  1.030098   1.003659   1.030098
@@ -337,7 +338,7 @@ wf %>%
 #> Parallel processing is ENABLED.
 #> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: -------------------------------------------------------------------------------------------------                                                100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------         100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------------   100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
+#>  Progress: ------------------------------------------------------------------------------------------                                                       100% Progress: ------------------------------------------------------------------------------------------------------------------------------------             100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------------   100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
 #> Completed calculation.
 #>   id time cr_length_168 med_aspirin_length_168
 #> 1  1    0             2                      0
@@ -364,7 +365,7 @@ wf %>%
 #> Parallel processing is ENABLED.
 #> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: -------------------------------------------------------------------------------------------------                                                100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------       100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------------   100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------------   100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
+#>  Progress: ------------------------------------------------------------------------------------------                                                       100% Progress: ----------------------------------------------------------------------------------------------------------------------------------               100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------------   100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
 #> Completed calculation.
 #>   id time cr_length_12 med_acetaminophen_length_12 med_aspirin_length_12
 #> 1  1    0            2                           0                     0
@@ -404,7 +405,7 @@ benchmark_results[['multisession']] =
                                    length = length)),
     times = 1
   )
-#>  Progress: --------------------------------------------------------------------------------------------                                                     100% Progress: ---------------------------------------------------------------------------------------------------------------------------------------          100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------------   100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
+#>  Progress: -----------------------------------------------------------------------------------------                                                        100% Progress: ----------------------------------------------------------------------------------------------------------------------------------               100% Progress: ----------------------------------------------------------------------------------------------------------------------------------------------   100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
 ```
 
 ### Running in parallel with a chunk\_size of 20
@@ -437,7 +438,7 @@ benchmark_results[['multisession with chunk_size 20']] =
 #> Beginning calculation...
 #>  Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpEh3Ady/wizard_dir/chunk_1_rolling_predictors_variables_cr_2021_02_22_20_31_55.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpeMx3hc/wizard_dir/chunk_1_rolling_predictors_variables_cr_2021_02_22_21_40_45.csv
 #> Processing chunk # 2 out of 5...
 #> Joining, by = "id"
 #> Processing variables: cr...
@@ -446,9 +447,9 @@ benchmark_results[['multisession with chunk_size 20']] =
 #> Parallel processing is ENABLED.
 #> Determining missing values for each statistic...
 #> Beginning calculation...
-#>  Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
+#>  Progress: ----------------------------------------------------------------------------------------------------------------------------------------------   100% Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpEh3Ady/wizard_dir/chunk_2_rolling_predictors_variables_cr_2021_02_22_20_32_00.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpeMx3hc/wizard_dir/chunk_2_rolling_predictors_variables_cr_2021_02_22_21_40_50.csv
 #> Processing chunk # 3 out of 5...
 #> Joining, by = "id"
 #> Processing variables: cr...
@@ -459,7 +460,7 @@ benchmark_results[['multisession with chunk_size 20']] =
 #> Beginning calculation...
 #>  Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpEh3Ady/wizard_dir/chunk_3_rolling_predictors_variables_cr_2021_02_22_20_32_05.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpeMx3hc/wizard_dir/chunk_3_rolling_predictors_variables_cr_2021_02_22_21_40_55.csv
 #> Processing chunk # 4 out of 5...
 #> Joining, by = "id"
 #> Processing variables: cr...
@@ -470,7 +471,7 @@ benchmark_results[['multisession with chunk_size 20']] =
 #> Beginning calculation...
 #>  Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpEh3Ady/wizard_dir/chunk_4_rolling_predictors_variables_cr_2021_02_22_20_32_11.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpeMx3hc/wizard_dir/chunk_4_rolling_predictors_variables_cr_2021_02_22_21_41_00.csv
 #> Processing chunk # 5 out of 5...
 #> Joining, by = "id"
 #> Processing variables: cr...
@@ -481,7 +482,7 @@ benchmark_results[['multisession with chunk_size 20']] =
 #> Beginning calculation...
 #>  Progress: ------------------------------------------------------------------------------------------------------------------------------------------------ 100%
 #> Completed calculation.
-#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpEh3Ady/wizard_dir/chunk_5_rolling_predictors_variables_cr_2021_02_22_20_32_16.csv
+#> The output file was written to: C:\Users\kdpsingh\AppData\Local\Temp\3\RtmpeMx3hc/wizard_dir/chunk_5_rolling_predictors_variables_cr_2021_02_22_21_41_05.csv
 ```
 
 ### Running in serial
@@ -513,19 +514,19 @@ benchmark_results
 #>                                                                                                                                                                               expr
 #>  wf %>% wiz_add_predictors(variable = "cr", lookback = hours(48),      window = hours(6), stats = c(mean = mean, min = min, max = max,          median = median, length = length))
 #>       min       lq     mean   median       uq      max neval
-#>  21.80782 21.80782 21.80782 21.80782 21.80782 21.80782     1
+#>  20.38435 20.38435 20.38435 20.38435 20.38435 20.38435     1
 #> 
 #> $`multisession with chunk_size 20`
 #> Unit: seconds
 #>                                                                                                                                                                                           expr
 #>  wf_with_chunks %>% wiz_add_predictors(variable = "cr", lookback = hours(48),      window = hours(6), stats = c(mean = mean, min = min, max = max,          median = median, length = length))
 #>       min       lq     mean   median       uq      max neval
-#>  26.16058 26.16058 26.16058 26.16058 26.16058 26.16058     1
+#>  23.51722 23.51722 23.51722 23.51722 23.51722 23.51722     1
 #> 
 #> $sequential
 #> Unit: seconds
 #>                                                                                                                                                                               expr
 #>  wf %>% wiz_add_predictors(variable = "cr", lookback = hours(48),      window = hours(6), stats = c(mean = mean, min = min, max = max,          median = median, length = length))
 #>       min       lq     mean   median       uq      max neval
-#>  188.8706 188.8706 188.8706 188.8706 188.8706 188.8706     1
+#>  182.9422 182.9422 182.9422 182.9422 182.9422 182.9422     1
 ```

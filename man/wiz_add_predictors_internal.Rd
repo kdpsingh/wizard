@@ -9,7 +9,7 @@ wiz_add_predictors_internal(
   wiz_frame = NULL,
   variables = NULL,
   category = NULL,
-  lookback = hours(48),
+  lookback = lubridate::hours(48),
   window = lookback,
   stats = c(mean = mean, min = min, max = max),
   impute = TRUE,

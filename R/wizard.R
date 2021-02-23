@@ -335,8 +335,9 @@ wiz_dummy_code = function(wiz_frame = NULL,
       dplyr::pull(variable)
 
     if (length(categorical_vars) == 0) {
-      stop(paste('There are no categorical variables. There is no need to apply wiz_dummy_code(). ',
+      message(paste('There are no categorical variables. There is no need to apply wiz_dummy_code(). ',
                  'To override this, please supply a vector of variable names to the variables argument.'))
+      return(wiz_frame)
     }
 
     wiz_frame$temporal_data = wiz_frame$temporal_data %>%

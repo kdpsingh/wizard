@@ -51,3 +51,6 @@
 # wizard 0.1.0 (2021-02-22)
 * Fixed bug with the temporal_data_of_interest being empty due to highly sparse variables
 * Also added check for max_step_times_per_id being empty (though this should not occur)
+
+# wizard 0.2.0 (2021-02-22)
+* Moved `wiz_calc` out to a separate function to greatly reduce the memory footprint for parallel processing
