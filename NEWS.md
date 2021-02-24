@@ -54,3 +54,6 @@
 
 # wizard 0.2.0 (2021-02-22)
 * Moved `wiz_calc` out to a separate function to greatly reduce the memory footprint for parallel processing
+
+# wizard 0.2.1 (2021-02-24)
+* Perform a final check in `wiz_add_predictors_internal` to ensure that the output_frame is not empty. If it is, then return a message rather than simply writing an empty output file to disk, which can result in an error when combining this with other files due to mismatches in data types for the temporal_id column.

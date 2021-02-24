@@ -553,6 +553,21 @@ wiz_add_predictors_internal = function(wiz_frame = NULL,
           file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
   }
 
+  # Check to see if there is any data in the output_frame
+  if (nrow(output_frame) == 0) {
+    message('No values found for the selected variable(s) during the time period.')
+    if (log_file) {
+      write(paste0(Sys.time(), ': No values found for the selected variable(s) during the time period.'),
+            file.path(wiz_frame$output_folder, 'wiz_log.txt'), append = TRUE)
+    }
+
+    if (output_file == TRUE) {
+      return(invisible(wiz_frame))
+    }
+
+    return(NULL)
+  }
+
   if (lookback_converted < 0) {
     file_type = '_outcomes_'
   } else {
