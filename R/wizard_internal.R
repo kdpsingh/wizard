@@ -588,8 +588,15 @@ wiz_add_predictors_internal = function(wiz_frame = NULL,
                 janitor::make_clean_names() %>%
                 paste0('.csv'))
   } else {
+    # BUGFIX checks total pathname and truncates from variable name(s)
+    path_length = nchar(file.path(wiz_frame$output_folder, paste0(filename_prefix, file_type, '_variables_', '_', lubridate::now(), '.csv')))
+    var_length = nchar(paste0(variables, collapse = '_'))
+    if(path_length + var_length > 255) {
+      new_var_length = (255 - path_length)
+      message("Filename truncated due to length")
+      } else (new_var_length = var_length)
     file.path(wiz_frame$output_folder,
-              paste0(filename_prefix, file_type, '_variables_', paste0(variables, collapse = '_'),
+              paste0(filename_prefix, file_type, '_variables_', substring(paste0(variables, collapse = '_'), 0, new_var_length),
                      '_', lubridate::now()) %>%
                 janitor::make_clean_names() %>%
                 paste0('.csv'))
