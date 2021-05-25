@@ -468,7 +468,7 @@ wiz_add_predictors_internal = function(wiz_frame = NULL,
         lubridate::time_length(dots[['offset']], unit = wiz_frame$step_units)
     } else {
       temporal_data_of_interest[[wiz_frame$temporal_time]] =
-        temporal_data_of_interest[[wiz_frame$temporal_time]] + offset
+        temporal_data_of_interest[[wiz_frame$temporal_time]] + dots[['offset']]
     }
   }
 
